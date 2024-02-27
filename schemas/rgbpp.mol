@@ -1,0 +1,15 @@
+import blockchain;
+
+# RGBPP lock args
+struct RGBPPLock {
+  # Type hash of bitcoin light client
+  bitcoin_lc_type_hash: Byte32,
+  out_index: Uint32,
+  bitcoin_transaction_hash: Byte32,
+}
+
+# RGBPP unlock witness
+table RGBPPUnlock {
+  bitcoin_transaction: Bytes,
+  previous_ckb_transaction: Transaction,
+}

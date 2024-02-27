@@ -110,4 +110,9 @@ CHECKSUM_FILE := build/checksums-$(MODE).txt
 checksum: build
 	sha256sum build/$(MODE)/* > $(CHECKSUM_FILE)
 
-.PHONY: build test check clippy fmt cargo clean prepare checksum
+# Generate schemas
+schemas:
+	moleculec --language rust --schema-file schemas/rgbpp.mol > crates/core/src/schemas/rgbpp.rs
+	cargo fmt
+
+.PHONY: build test check clippy fmt cargo clean prepare checksum schemas
