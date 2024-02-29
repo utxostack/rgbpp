@@ -3,6 +3,194 @@
 use super::blockchain::*;
 use molecule::prelude::*;
 #[derive(Clone)]
+pub struct RGBPPConfig(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for RGBPPConfig {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl ::core::fmt::Debug for RGBPPConfig {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl ::core::fmt::Display for RGBPPConfig {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} {{ ", Self::NAME)?;
+        write!(
+            f,
+            "{}: {}",
+            "bitcoin_lc_type_hash",
+            self.bitcoin_lc_type_hash()
+        )?;
+        write!(
+            f,
+            ", {}: {}",
+            "bitcoin_time_lock_type_hash",
+            self.bitcoin_time_lock_type_hash()
+        )?;
+        write!(f, " }}")
+    }
+}
+impl ::core::default::Default for RGBPPConfig {
+    fn default() -> Self {
+        let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
+        RGBPPConfig::new_unchecked(v)
+    }
+}
+impl RGBPPConfig {
+    const DEFAULT_VALUE: [u8; 64] = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0,
+    ];
+    pub const TOTAL_SIZE: usize = 64;
+    pub const FIELD_SIZES: [usize; 2] = [32, 32];
+    pub const FIELD_COUNT: usize = 2;
+    pub fn bitcoin_lc_type_hash(&self) -> Byte32 {
+        Byte32::new_unchecked(self.0.slice(0..32))
+    }
+    pub fn bitcoin_time_lock_type_hash(&self) -> Byte32 {
+        Byte32::new_unchecked(self.0.slice(32..64))
+    }
+    pub fn as_reader<'r>(&'r self) -> RGBPPConfigReader<'r> {
+        RGBPPConfigReader::new_unchecked(self.as_slice())
+    }
+}
+impl molecule::prelude::Entity for RGBPPConfig {
+    type Builder = RGBPPConfigBuilder;
+    const NAME: &'static str = "RGBPPConfig";
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        RGBPPConfig(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        RGBPPConfigReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        RGBPPConfigReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder()
+            .bitcoin_lc_type_hash(self.bitcoin_lc_type_hash())
+            .bitcoin_time_lock_type_hash(self.bitcoin_time_lock_type_hash())
+    }
+}
+#[derive(Clone, Copy)]
+pub struct RGBPPConfigReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for RGBPPConfigReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl<'r> ::core::fmt::Debug for RGBPPConfigReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl<'r> ::core::fmt::Display for RGBPPConfigReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} {{ ", Self::NAME)?;
+        write!(
+            f,
+            "{}: {}",
+            "bitcoin_lc_type_hash",
+            self.bitcoin_lc_type_hash()
+        )?;
+        write!(
+            f,
+            ", {}: {}",
+            "bitcoin_time_lock_type_hash",
+            self.bitcoin_time_lock_type_hash()
+        )?;
+        write!(f, " }}")
+    }
+}
+impl<'r> RGBPPConfigReader<'r> {
+    pub const TOTAL_SIZE: usize = 64;
+    pub const FIELD_SIZES: [usize; 2] = [32, 32];
+    pub const FIELD_COUNT: usize = 2;
+    pub fn bitcoin_lc_type_hash(&self) -> Byte32Reader<'r> {
+        Byte32Reader::new_unchecked(&self.as_slice()[0..32])
+    }
+    pub fn bitcoin_time_lock_type_hash(&self) -> Byte32Reader<'r> {
+        Byte32Reader::new_unchecked(&self.as_slice()[32..64])
+    }
+}
+impl<'r> molecule::prelude::Reader<'r> for RGBPPConfigReader<'r> {
+    type Entity = RGBPPConfig;
+    const NAME: &'static str = "RGBPPConfigReader";
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        RGBPPConfigReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
+    fn verify(slice: &[u8], _compatible: bool) -> molecule::error::VerificationResult<()> {
+        use molecule::verification_error as ve;
+        let slice_len = slice.len();
+        if slice_len != Self::TOTAL_SIZE {
+            return ve!(Self, TotalSizeNotMatch, Self::TOTAL_SIZE, slice_len);
+        }
+        Ok(())
+    }
+}
+#[derive(Debug, Default)]
+pub struct RGBPPConfigBuilder {
+    pub(crate) bitcoin_lc_type_hash: Byte32,
+    pub(crate) bitcoin_time_lock_type_hash: Byte32,
+}
+impl RGBPPConfigBuilder {
+    pub const TOTAL_SIZE: usize = 64;
+    pub const FIELD_SIZES: [usize; 2] = [32, 32];
+    pub const FIELD_COUNT: usize = 2;
+    pub fn bitcoin_lc_type_hash(mut self, v: Byte32) -> Self {
+        self.bitcoin_lc_type_hash = v;
+        self
+    }
+    pub fn bitcoin_time_lock_type_hash(mut self, v: Byte32) -> Self {
+        self.bitcoin_time_lock_type_hash = v;
+        self
+    }
+}
+impl molecule::prelude::Builder for RGBPPConfigBuilder {
+    type Entity = RGBPPConfig;
+    const NAME: &'static str = "RGBPPConfigBuilder";
+    fn expected_length(&self) -> usize {
+        Self::TOTAL_SIZE
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        writer.write_all(self.bitcoin_lc_type_hash.as_slice())?;
+        writer.write_all(self.bitcoin_time_lock_type_hash.as_slice())?;
+        Ok(())
+    }
+    fn build(&self) -> Self::Entity {
+        let mut inner = Vec::with_capacity(self.expected_length());
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        RGBPPConfig::new_unchecked(inner.into())
+    }
+}
+#[derive(Clone)]
 pub struct RGBPPLock(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for RGBPPLock {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
