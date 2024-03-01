@@ -3,19 +3,27 @@ import blockchain;
 # RGBPP config
 struct RGBPPConfig {
   # Type hash of bitcoin light client
-  bitcoin_lc_type_hash: Byte32,
+  btc_lc_type_hash: Byte32,
   # Type hash of bitcoin time lock contract
-  bitcoin_time_lock_type_hash: Byte32,
+  btc_time_lock_type_hash: Byte32,
 }
 
 # RGBPP lock args
 struct RGBPPLock {
   out_index: Uint32,
-  bitcoin_transaction_hash: Byte32,
+  btc_txid: Byte32,
 }
 
 # RGBPP unlock witness
 table RGBPPUnlock {
-  bitcoin_transaction: Bytes,
-  previous_ckb_transaction: Transaction,
+  btc_tx: Bytes,
 }
+
+# BTCTimeLock
+
+struct BTCTimeLock {
+  lock_hash: Byte32,
+  after: Uint32,
+  btc_txid: Byte32,
+}
+

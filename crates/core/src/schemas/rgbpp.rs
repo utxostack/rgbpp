@@ -21,17 +21,12 @@ impl ::core::fmt::Debug for RGBPPConfig {
 impl ::core::fmt::Display for RGBPPConfig {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(
-            f,
-            "{}: {}",
-            "bitcoin_lc_type_hash",
-            self.bitcoin_lc_type_hash()
-        )?;
+        write!(f, "{}: {}", "btc_lc_type_hash", self.btc_lc_type_hash())?;
         write!(
             f,
             ", {}: {}",
-            "bitcoin_time_lock_type_hash",
-            self.bitcoin_time_lock_type_hash()
+            "btc_time_lock_type_hash",
+            self.btc_time_lock_type_hash()
         )?;
         write!(f, " }}")
     }
@@ -51,10 +46,10 @@ impl RGBPPConfig {
     pub const TOTAL_SIZE: usize = 64;
     pub const FIELD_SIZES: [usize; 2] = [32, 32];
     pub const FIELD_COUNT: usize = 2;
-    pub fn bitcoin_lc_type_hash(&self) -> Byte32 {
+    pub fn btc_lc_type_hash(&self) -> Byte32 {
         Byte32::new_unchecked(self.0.slice(0..32))
     }
-    pub fn bitcoin_time_lock_type_hash(&self) -> Byte32 {
+    pub fn btc_time_lock_type_hash(&self) -> Byte32 {
         Byte32::new_unchecked(self.0.slice(32..64))
     }
     pub fn as_reader<'r>(&'r self) -> RGBPPConfigReader<'r> {
@@ -84,8 +79,8 @@ impl molecule::prelude::Entity for RGBPPConfig {
     }
     fn as_builder(self) -> Self::Builder {
         Self::new_builder()
-            .bitcoin_lc_type_hash(self.bitcoin_lc_type_hash())
-            .bitcoin_time_lock_type_hash(self.bitcoin_time_lock_type_hash())
+            .btc_lc_type_hash(self.btc_lc_type_hash())
+            .btc_time_lock_type_hash(self.btc_time_lock_type_hash())
     }
 }
 #[derive(Clone, Copy)]
@@ -107,17 +102,12 @@ impl<'r> ::core::fmt::Debug for RGBPPConfigReader<'r> {
 impl<'r> ::core::fmt::Display for RGBPPConfigReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(
-            f,
-            "{}: {}",
-            "bitcoin_lc_type_hash",
-            self.bitcoin_lc_type_hash()
-        )?;
+        write!(f, "{}: {}", "btc_lc_type_hash", self.btc_lc_type_hash())?;
         write!(
             f,
             ", {}: {}",
-            "bitcoin_time_lock_type_hash",
-            self.bitcoin_time_lock_type_hash()
+            "btc_time_lock_type_hash",
+            self.btc_time_lock_type_hash()
         )?;
         write!(f, " }}")
     }
@@ -126,10 +116,10 @@ impl<'r> RGBPPConfigReader<'r> {
     pub const TOTAL_SIZE: usize = 64;
     pub const FIELD_SIZES: [usize; 2] = [32, 32];
     pub const FIELD_COUNT: usize = 2;
-    pub fn bitcoin_lc_type_hash(&self) -> Byte32Reader<'r> {
+    pub fn btc_lc_type_hash(&self) -> Byte32Reader<'r> {
         Byte32Reader::new_unchecked(&self.as_slice()[0..32])
     }
-    pub fn bitcoin_time_lock_type_hash(&self) -> Byte32Reader<'r> {
+    pub fn btc_time_lock_type_hash(&self) -> Byte32Reader<'r> {
         Byte32Reader::new_unchecked(&self.as_slice()[32..64])
     }
 }
@@ -156,19 +146,19 @@ impl<'r> molecule::prelude::Reader<'r> for RGBPPConfigReader<'r> {
 }
 #[derive(Debug, Default)]
 pub struct RGBPPConfigBuilder {
-    pub(crate) bitcoin_lc_type_hash: Byte32,
-    pub(crate) bitcoin_time_lock_type_hash: Byte32,
+    pub(crate) btc_lc_type_hash: Byte32,
+    pub(crate) btc_time_lock_type_hash: Byte32,
 }
 impl RGBPPConfigBuilder {
     pub const TOTAL_SIZE: usize = 64;
     pub const FIELD_SIZES: [usize; 2] = [32, 32];
     pub const FIELD_COUNT: usize = 2;
-    pub fn bitcoin_lc_type_hash(mut self, v: Byte32) -> Self {
-        self.bitcoin_lc_type_hash = v;
+    pub fn btc_lc_type_hash(mut self, v: Byte32) -> Self {
+        self.btc_lc_type_hash = v;
         self
     }
-    pub fn bitcoin_time_lock_type_hash(mut self, v: Byte32) -> Self {
-        self.bitcoin_time_lock_type_hash = v;
+    pub fn btc_time_lock_type_hash(mut self, v: Byte32) -> Self {
+        self.btc_time_lock_type_hash = v;
         self
     }
 }
@@ -179,8 +169,8 @@ impl molecule::prelude::Builder for RGBPPConfigBuilder {
         Self::TOTAL_SIZE
     }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
-        writer.write_all(self.bitcoin_lc_type_hash.as_slice())?;
-        writer.write_all(self.bitcoin_time_lock_type_hash.as_slice())?;
+        writer.write_all(self.btc_lc_type_hash.as_slice())?;
+        writer.write_all(self.btc_time_lock_type_hash.as_slice())?;
         Ok(())
     }
     fn build(&self) -> Self::Entity {
@@ -210,12 +200,7 @@ impl ::core::fmt::Display for RGBPPLock {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "out_index", self.out_index())?;
-        write!(
-            f,
-            ", {}: {}",
-            "bitcoin_transaction_hash",
-            self.bitcoin_transaction_hash()
-        )?;
+        write!(f, ", {}: {}", "btc_txid", self.btc_txid())?;
         write!(f, " }}")
     }
 }
@@ -236,7 +221,7 @@ impl RGBPPLock {
     pub fn out_index(&self) -> Uint32 {
         Uint32::new_unchecked(self.0.slice(0..4))
     }
-    pub fn bitcoin_transaction_hash(&self) -> Byte32 {
+    pub fn btc_txid(&self) -> Byte32 {
         Byte32::new_unchecked(self.0.slice(4..36))
     }
     pub fn as_reader<'r>(&'r self) -> RGBPPLockReader<'r> {
@@ -267,7 +252,7 @@ impl molecule::prelude::Entity for RGBPPLock {
     fn as_builder(self) -> Self::Builder {
         Self::new_builder()
             .out_index(self.out_index())
-            .bitcoin_transaction_hash(self.bitcoin_transaction_hash())
+            .btc_txid(self.btc_txid())
     }
 }
 #[derive(Clone, Copy)]
@@ -290,12 +275,7 @@ impl<'r> ::core::fmt::Display for RGBPPLockReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "out_index", self.out_index())?;
-        write!(
-            f,
-            ", {}: {}",
-            "bitcoin_transaction_hash",
-            self.bitcoin_transaction_hash()
-        )?;
+        write!(f, ", {}: {}", "btc_txid", self.btc_txid())?;
         write!(f, " }}")
     }
 }
@@ -306,7 +286,7 @@ impl<'r> RGBPPLockReader<'r> {
     pub fn out_index(&self) -> Uint32Reader<'r> {
         Uint32Reader::new_unchecked(&self.as_slice()[0..4])
     }
-    pub fn bitcoin_transaction_hash(&self) -> Byte32Reader<'r> {
+    pub fn btc_txid(&self) -> Byte32Reader<'r> {
         Byte32Reader::new_unchecked(&self.as_slice()[4..36])
     }
 }
@@ -334,7 +314,7 @@ impl<'r> molecule::prelude::Reader<'r> for RGBPPLockReader<'r> {
 #[derive(Debug, Default)]
 pub struct RGBPPLockBuilder {
     pub(crate) out_index: Uint32,
-    pub(crate) bitcoin_transaction_hash: Byte32,
+    pub(crate) btc_txid: Byte32,
 }
 impl RGBPPLockBuilder {
     pub const TOTAL_SIZE: usize = 36;
@@ -344,8 +324,8 @@ impl RGBPPLockBuilder {
         self.out_index = v;
         self
     }
-    pub fn bitcoin_transaction_hash(mut self, v: Byte32) -> Self {
-        self.bitcoin_transaction_hash = v;
+    pub fn btc_txid(mut self, v: Byte32) -> Self {
+        self.btc_txid = v;
         self
     }
 }
@@ -357,7 +337,7 @@ impl molecule::prelude::Builder for RGBPPLockBuilder {
     }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         writer.write_all(self.out_index.as_slice())?;
-        writer.write_all(self.bitcoin_transaction_hash.as_slice())?;
+        writer.write_all(self.btc_txid.as_slice())?;
         Ok(())
     }
     fn build(&self) -> Self::Entity {
@@ -386,18 +366,7 @@ impl ::core::fmt::Debug for RGBPPUnlock {
 impl ::core::fmt::Display for RGBPPUnlock {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(
-            f,
-            "{}: {}",
-            "bitcoin_transaction",
-            self.bitcoin_transaction()
-        )?;
-        write!(
-            f,
-            ", {}: {}",
-            "previous_ckb_transaction",
-            self.previous_ckb_transaction()
-        )?;
+        write!(f, "{}: {}", "btc_tx", self.btc_tx())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -412,12 +381,8 @@ impl ::core::default::Default for RGBPPUnlock {
     }
 }
 impl RGBPPUnlock {
-    const DEFAULT_VALUE: [u8; 84] = [
-        84, 0, 0, 0, 12, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 68, 0, 0, 0, 12, 0, 0, 0, 64, 0, 0, 0,
-        52, 0, 0, 0, 28, 0, 0, 0, 32, 0, 0, 0, 36, 0, 0, 0, 40, 0, 0, 0, 44, 0, 0, 0, 48, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 4, 0, 0, 0, 4, 0, 0, 0,
-    ];
-    pub const FIELD_COUNT: usize = 2;
+    const DEFAULT_VALUE: [u8; 12] = [12, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0];
+    pub const FIELD_COUNT: usize = 1;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
     }
@@ -434,20 +399,14 @@ impl RGBPPUnlock {
     pub fn has_extra_fields(&self) -> bool {
         Self::FIELD_COUNT != self.field_count()
     }
-    pub fn bitcoin_transaction(&self) -> Bytes {
+    pub fn btc_tx(&self) -> Bytes {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
-        let end = molecule::unpack_number(&slice[8..]) as usize;
-        Bytes::new_unchecked(self.0.slice(start..end))
-    }
-    pub fn previous_ckb_transaction(&self) -> Transaction {
-        let slice = self.as_slice();
-        let start = molecule::unpack_number(&slice[8..]) as usize;
         if self.has_extra_fields() {
-            let end = molecule::unpack_number(&slice[12..]) as usize;
-            Transaction::new_unchecked(self.0.slice(start..end))
+            let end = molecule::unpack_number(&slice[8..]) as usize;
+            Bytes::new_unchecked(self.0.slice(start..end))
         } else {
-            Transaction::new_unchecked(self.0.slice(start..))
+            Bytes::new_unchecked(self.0.slice(start..))
         }
     }
     pub fn as_reader<'r>(&'r self) -> RGBPPUnlockReader<'r> {
@@ -476,9 +435,7 @@ impl molecule::prelude::Entity for RGBPPUnlock {
         ::core::default::Default::default()
     }
     fn as_builder(self) -> Self::Builder {
-        Self::new_builder()
-            .bitcoin_transaction(self.bitcoin_transaction())
-            .previous_ckb_transaction(self.previous_ckb_transaction())
+        Self::new_builder().btc_tx(self.btc_tx())
     }
 }
 #[derive(Clone, Copy)]
@@ -500,18 +457,7 @@ impl<'r> ::core::fmt::Debug for RGBPPUnlockReader<'r> {
 impl<'r> ::core::fmt::Display for RGBPPUnlockReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(
-            f,
-            "{}: {}",
-            "bitcoin_transaction",
-            self.bitcoin_transaction()
-        )?;
-        write!(
-            f,
-            ", {}: {}",
-            "previous_ckb_transaction",
-            self.previous_ckb_transaction()
-        )?;
+        write!(f, "{}: {}", "btc_tx", self.btc_tx())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -520,7 +466,7 @@ impl<'r> ::core::fmt::Display for RGBPPUnlockReader<'r> {
     }
 }
 impl<'r> RGBPPUnlockReader<'r> {
-    pub const FIELD_COUNT: usize = 2;
+    pub const FIELD_COUNT: usize = 1;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
     }
@@ -537,20 +483,14 @@ impl<'r> RGBPPUnlockReader<'r> {
     pub fn has_extra_fields(&self) -> bool {
         Self::FIELD_COUNT != self.field_count()
     }
-    pub fn bitcoin_transaction(&self) -> BytesReader<'r> {
+    pub fn btc_tx(&self) -> BytesReader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
-        let end = molecule::unpack_number(&slice[8..]) as usize;
-        BytesReader::new_unchecked(&self.as_slice()[start..end])
-    }
-    pub fn previous_ckb_transaction(&self) -> TransactionReader<'r> {
-        let slice = self.as_slice();
-        let start = molecule::unpack_number(&slice[8..]) as usize;
         if self.has_extra_fields() {
-            let end = molecule::unpack_number(&slice[12..]) as usize;
-            TransactionReader::new_unchecked(&self.as_slice()[start..end])
+            let end = molecule::unpack_number(&slice[8..]) as usize;
+            BytesReader::new_unchecked(&self.as_slice()[start..end])
         } else {
-            TransactionReader::new_unchecked(&self.as_slice()[start..])
+            BytesReader::new_unchecked(&self.as_slice()[start..])
         }
     }
 }
@@ -601,23 +541,17 @@ impl<'r> molecule::prelude::Reader<'r> for RGBPPUnlockReader<'r> {
             return ve!(Self, OffsetsNotMatch);
         }
         BytesReader::verify(&slice[offsets[0]..offsets[1]], compatible)?;
-        TransactionReader::verify(&slice[offsets[1]..offsets[2]], compatible)?;
         Ok(())
     }
 }
 #[derive(Debug, Default)]
 pub struct RGBPPUnlockBuilder {
-    pub(crate) bitcoin_transaction: Bytes,
-    pub(crate) previous_ckb_transaction: Transaction,
+    pub(crate) btc_tx: Bytes,
 }
 impl RGBPPUnlockBuilder {
-    pub const FIELD_COUNT: usize = 2;
-    pub fn bitcoin_transaction(mut self, v: Bytes) -> Self {
-        self.bitcoin_transaction = v;
-        self
-    }
-    pub fn previous_ckb_transaction(mut self, v: Transaction) -> Self {
-        self.previous_ckb_transaction = v;
+    pub const FIELD_COUNT: usize = 1;
+    pub fn btc_tx(mut self, v: Bytes) -> Self {
+        self.btc_tx = v;
         self
     }
 }
@@ -625,23 +559,18 @@ impl molecule::prelude::Builder for RGBPPUnlockBuilder {
     type Entity = RGBPPUnlock;
     const NAME: &'static str = "RGBPPUnlockBuilder";
     fn expected_length(&self) -> usize {
-        molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
-            + self.bitcoin_transaction.as_slice().len()
-            + self.previous_ckb_transaction.as_slice().len()
+        molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1) + self.btc_tx.as_slice().len()
     }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
         let mut offsets = Vec::with_capacity(Self::FIELD_COUNT);
         offsets.push(total_size);
-        total_size += self.bitcoin_transaction.as_slice().len();
-        offsets.push(total_size);
-        total_size += self.previous_ckb_transaction.as_slice().len();
+        total_size += self.btc_tx.as_slice().len();
         writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
         for offset in offsets.into_iter() {
             writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
         }
-        writer.write_all(self.bitcoin_transaction.as_slice())?;
-        writer.write_all(self.previous_ckb_transaction.as_slice())?;
+        writer.write_all(self.btc_tx.as_slice())?;
         Ok(())
     }
     fn build(&self) -> Self::Entity {
@@ -649,5 +578,188 @@ impl molecule::prelude::Builder for RGBPPUnlockBuilder {
         self.write(&mut inner)
             .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
         RGBPPUnlock::new_unchecked(inner.into())
+    }
+}
+#[derive(Clone)]
+pub struct BTCTimeLock(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for BTCTimeLock {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl ::core::fmt::Debug for BTCTimeLock {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl ::core::fmt::Display for BTCTimeLock {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} {{ ", Self::NAME)?;
+        write!(f, "{}: {}", "lock_hash", self.lock_hash())?;
+        write!(f, ", {}: {}", "after", self.after())?;
+        write!(f, ", {}: {}", "btc_txid", self.btc_txid())?;
+        write!(f, " }}")
+    }
+}
+impl ::core::default::Default for BTCTimeLock {
+    fn default() -> Self {
+        let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
+        BTCTimeLock::new_unchecked(v)
+    }
+}
+impl BTCTimeLock {
+    const DEFAULT_VALUE: [u8; 68] = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ];
+    pub const TOTAL_SIZE: usize = 68;
+    pub const FIELD_SIZES: [usize; 3] = [32, 4, 32];
+    pub const FIELD_COUNT: usize = 3;
+    pub fn lock_hash(&self) -> Byte32 {
+        Byte32::new_unchecked(self.0.slice(0..32))
+    }
+    pub fn after(&self) -> Uint32 {
+        Uint32::new_unchecked(self.0.slice(32..36))
+    }
+    pub fn btc_txid(&self) -> Byte32 {
+        Byte32::new_unchecked(self.0.slice(36..68))
+    }
+    pub fn as_reader<'r>(&'r self) -> BTCTimeLockReader<'r> {
+        BTCTimeLockReader::new_unchecked(self.as_slice())
+    }
+}
+impl molecule::prelude::Entity for BTCTimeLock {
+    type Builder = BTCTimeLockBuilder;
+    const NAME: &'static str = "BTCTimeLock";
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        BTCTimeLock(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        BTCTimeLockReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        BTCTimeLockReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder()
+            .lock_hash(self.lock_hash())
+            .after(self.after())
+            .btc_txid(self.btc_txid())
+    }
+}
+#[derive(Clone, Copy)]
+pub struct BTCTimeLockReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for BTCTimeLockReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl<'r> ::core::fmt::Debug for BTCTimeLockReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl<'r> ::core::fmt::Display for BTCTimeLockReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} {{ ", Self::NAME)?;
+        write!(f, "{}: {}", "lock_hash", self.lock_hash())?;
+        write!(f, ", {}: {}", "after", self.after())?;
+        write!(f, ", {}: {}", "btc_txid", self.btc_txid())?;
+        write!(f, " }}")
+    }
+}
+impl<'r> BTCTimeLockReader<'r> {
+    pub const TOTAL_SIZE: usize = 68;
+    pub const FIELD_SIZES: [usize; 3] = [32, 4, 32];
+    pub const FIELD_COUNT: usize = 3;
+    pub fn lock_hash(&self) -> Byte32Reader<'r> {
+        Byte32Reader::new_unchecked(&self.as_slice()[0..32])
+    }
+    pub fn after(&self) -> Uint32Reader<'r> {
+        Uint32Reader::new_unchecked(&self.as_slice()[32..36])
+    }
+    pub fn btc_txid(&self) -> Byte32Reader<'r> {
+        Byte32Reader::new_unchecked(&self.as_slice()[36..68])
+    }
+}
+impl<'r> molecule::prelude::Reader<'r> for BTCTimeLockReader<'r> {
+    type Entity = BTCTimeLock;
+    const NAME: &'static str = "BTCTimeLockReader";
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        BTCTimeLockReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
+    fn verify(slice: &[u8], _compatible: bool) -> molecule::error::VerificationResult<()> {
+        use molecule::verification_error as ve;
+        let slice_len = slice.len();
+        if slice_len != Self::TOTAL_SIZE {
+            return ve!(Self, TotalSizeNotMatch, Self::TOTAL_SIZE, slice_len);
+        }
+        Ok(())
+    }
+}
+#[derive(Debug, Default)]
+pub struct BTCTimeLockBuilder {
+    pub(crate) lock_hash: Byte32,
+    pub(crate) after: Uint32,
+    pub(crate) btc_txid: Byte32,
+}
+impl BTCTimeLockBuilder {
+    pub const TOTAL_SIZE: usize = 68;
+    pub const FIELD_SIZES: [usize; 3] = [32, 4, 32];
+    pub const FIELD_COUNT: usize = 3;
+    pub fn lock_hash(mut self, v: Byte32) -> Self {
+        self.lock_hash = v;
+        self
+    }
+    pub fn after(mut self, v: Uint32) -> Self {
+        self.after = v;
+        self
+    }
+    pub fn btc_txid(mut self, v: Byte32) -> Self {
+        self.btc_txid = v;
+        self
+    }
+}
+impl molecule::prelude::Builder for BTCTimeLockBuilder {
+    type Entity = BTCTimeLock;
+    const NAME: &'static str = "BTCTimeLockBuilder";
+    fn expected_length(&self) -> usize {
+        Self::TOTAL_SIZE
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        writer.write_all(self.lock_hash.as_slice())?;
+        writer.write_all(self.after.as_slice())?;
+        writer.write_all(self.btc_txid.as_slice())?;
+        Ok(())
+    }
+    fn build(&self) -> Self::Entity {
+        let mut inner = Vec::with_capacity(self.expected_length());
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        BTCTimeLock::new_unchecked(inner.into())
     }
 }
