@@ -15,7 +15,7 @@ pub fn check_btc_time_lock(lock_args: &BTCTimeLock, btc_tx: &BTCTx, min_lock: u3
     lock_args.btc_txid() == btc_tx.txid && after >= min_lock
 }
 
-pub fn is_btc_time_lock(config: &RGBPPConfig, lock: &Script) {
+pub fn is_btc_time_lock(config: &RGBPPConfig, lock: &Script) -> bool {
     lock.code_hash() == config.btc_time_lock_type_hash()
         && lock.hash_type() == ScriptHashType::Type.into()
 }

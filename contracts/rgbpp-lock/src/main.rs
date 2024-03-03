@@ -12,17 +12,19 @@ use ckb_std::{
     ckb_types::{
         bytes::Bytes,
         core::ScriptHashType,
-        packed::{Byte32, Transaction},
+        packed::{Byte32, CellDep, Transaction},
         prelude::{Entity, Unpack},
     },
     error::SysError,
     high_level::{
-        load_cell_data, load_cell_lock, load_cell_type_hash, load_input_out_point, load_script,
-        load_witness, load_witness_args, QueryIter,
+        load_cell_data, load_cell_lock, load_cell_type, load_cell_type_hash, load_input_out_point,
+        load_script, load_transaction, load_witness, load_witness_args,
+        look_for_dep_with_data_hash, look_for_dep_with_hash2, QueryIter,
     },
+    syscalls::load_cell_code,
 };
 use rgbpp_core::{
-    bitcoin::{self, calc_txid, parse_btc_tx, BTCTx},
+    bitcoin::{self, parse_btc_tx, BTCTx},
     rgbpp::{check_btc_time_lock, check_utxo_seal, is_btc_time_lock},
     schemas::rgbpp::*,
     utils::is_script_code_equal,
@@ -44,12 +46,57 @@ pub fn program_entry() -> i8 {
 }
 
 fn main() -> Result<(), SysError> {
-    let lock_args = todo!();
-    let config = todo!();
+    let lock_args = {
+        let rgbpp_lock = load_script()?;
+        RGBPPLock::from_slice(&rgbpp_lock.args().raw_data()).expect("parse RGBPP lock")
+    };
+    let config = load_rgbpp_config()?;
     let unlock_witness = fetch_unlock_from_witness()?;
-    verify_unlock(&config, &lock_args, &unlock_witness)?;
-    verify_outputs(&config, todo!())?;
+
+    // parse bitcoin transaction
+    let raw_btc_tx = unlock_witness.btc_tx().raw_data();
+    let btc_tx: BTCTx = parse_btc_tx(&raw_btc_tx);
+
+    verify_unlock(&config, &lock_args, &btc_tx)?;
+    verify_outputs(&config, &btc_tx)?;
     Ok(())
+}
+
+/// Config cell is deployed together with the current contract
+///
+/// ``` yaml
+/// contract_deployment_transaction:
+///   - output(index=0, data=rgbpp_code)
+///   - output(index=1, data=rgbpp_config)
+/// ```
+fn load_rgbpp_config() -> Result<RGBPPConfig, SysError> {
+    // get current script
+    let script = load_script()?;
+    let script_hash_type: ScriptHashType = script.hash_type().try_into().unwrap();
+    // look up script dep cell
+    let cell_dep_index = look_for_dep_with_hash2(script.code_hash().as_slice(), script_hash_type)?;
+    let tx = load_transaction()?;
+    let raw_tx = tx.raw();
+    let script_cell_dep = raw_tx
+        .cell_deps()
+        .get(cell_dep_index)
+        .expect("find script cell dep");
+    let script_out_point_index: u32 = script_cell_dep.out_point().index().unpack();
+    assert_eq!(script_out_point_index, 0, "script must be deployed on 0");
+    // look up config dep cell
+    let config_cell_dep_index = raw_tx
+        .cell_deps()
+        .into_iter()
+        .enumerate()
+        .find(|(_index, cell_dep)| {
+            let index: u32 = cell_dep.out_point().index().unpack();
+            index == 1 && cell_dep.out_point().tx_hash() == script_cell_dep.out_point().tx_hash()
+        })
+        .expect("find config cell dep")
+        .0;
+    let data = load_cell_data(config_cell_dep_index, Source::CellDep)?;
+    let config = RGBPPConfig::from_slice(&data).expect("parse config");
+    Ok(config)
 }
 
 /// Verify outputs cells is protected with RGB++ lock
@@ -102,18 +149,14 @@ fn fetch_unlock_from_witness() -> Result<RGBPPUnlock, SysError> {
 fn verify_unlock(
     config: &RGBPPConfig,
     lock_args: &RGBPPLock,
-    unlock_witness: &RGBPPUnlock,
+    btc_tx: &BTCTx,
 ) -> Result<(), SysError> {
-    // parse bitcoin transaction
-    let raw_btc_tx = unlock_witness.btc_tx().raw_data();
-    let btc_tx: BTCTx = parse_btc_tx(&raw_btc_tx);
-
     // check bitcoin transaction inputs unlock RGB++ cell
     let expected_out_point: (Byte32, u32) = (lock_args.btc_txid(), lock_args.out_index().unpack());
     let is_found = btc_tx
         .inputs
         .iter()
-        .any(|out_point| out_point == &expected_out_point);
+        .any(|txin| &txin.previous_output == &expected_out_point);
     if !is_found {
         panic!("Bitcoin transaction doesn't unlock this cell");
     }
