@@ -348,6 +348,346 @@ impl molecule::prelude::Builder for RGBPPLockBuilder {
     }
 }
 #[derive(Clone)]
+pub struct ExtraCommitmentData(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for ExtraCommitmentData {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl ::core::fmt::Debug for ExtraCommitmentData {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl ::core::fmt::Display for ExtraCommitmentData {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} {{ ", Self::NAME)?;
+        write!(f, "{}: {}", "input_len", self.input_len())?;
+        write!(f, ", {}: {}", "output_len", self.output_len())?;
+        write!(f, " }}")
+    }
+}
+impl ::core::default::Default for ExtraCommitmentData {
+    fn default() -> Self {
+        let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
+        ExtraCommitmentData::new_unchecked(v)
+    }
+}
+impl ExtraCommitmentData {
+    const DEFAULT_VALUE: [u8; 2] = [0, 0];
+    pub const TOTAL_SIZE: usize = 2;
+    pub const FIELD_SIZES: [usize; 2] = [1, 1];
+    pub const FIELD_COUNT: usize = 2;
+    pub fn input_len(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(0..1))
+    }
+    pub fn output_len(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(1..2))
+    }
+    pub fn as_reader<'r>(&'r self) -> ExtraCommitmentDataReader<'r> {
+        ExtraCommitmentDataReader::new_unchecked(self.as_slice())
+    }
+}
+impl molecule::prelude::Entity for ExtraCommitmentData {
+    type Builder = ExtraCommitmentDataBuilder;
+    const NAME: &'static str = "ExtraCommitmentData";
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        ExtraCommitmentData(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        ExtraCommitmentDataReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        ExtraCommitmentDataReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder()
+            .input_len(self.input_len())
+            .output_len(self.output_len())
+    }
+}
+#[derive(Clone, Copy)]
+pub struct ExtraCommitmentDataReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for ExtraCommitmentDataReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl<'r> ::core::fmt::Debug for ExtraCommitmentDataReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl<'r> ::core::fmt::Display for ExtraCommitmentDataReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} {{ ", Self::NAME)?;
+        write!(f, "{}: {}", "input_len", self.input_len())?;
+        write!(f, ", {}: {}", "output_len", self.output_len())?;
+        write!(f, " }}")
+    }
+}
+impl<'r> ExtraCommitmentDataReader<'r> {
+    pub const TOTAL_SIZE: usize = 2;
+    pub const FIELD_SIZES: [usize; 2] = [1, 1];
+    pub const FIELD_COUNT: usize = 2;
+    pub fn input_len(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[0..1])
+    }
+    pub fn output_len(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[1..2])
+    }
+}
+impl<'r> molecule::prelude::Reader<'r> for ExtraCommitmentDataReader<'r> {
+    type Entity = ExtraCommitmentData;
+    const NAME: &'static str = "ExtraCommitmentDataReader";
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        ExtraCommitmentDataReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
+    fn verify(slice: &[u8], _compatible: bool) -> molecule::error::VerificationResult<()> {
+        use molecule::verification_error as ve;
+        let slice_len = slice.len();
+        if slice_len != Self::TOTAL_SIZE {
+            return ve!(Self, TotalSizeNotMatch, Self::TOTAL_SIZE, slice_len);
+        }
+        Ok(())
+    }
+}
+#[derive(Debug, Default)]
+pub struct ExtraCommitmentDataBuilder {
+    pub(crate) input_len: Byte,
+    pub(crate) output_len: Byte,
+}
+impl ExtraCommitmentDataBuilder {
+    pub const TOTAL_SIZE: usize = 2;
+    pub const FIELD_SIZES: [usize; 2] = [1, 1];
+    pub const FIELD_COUNT: usize = 2;
+    pub fn input_len(mut self, v: Byte) -> Self {
+        self.input_len = v;
+        self
+    }
+    pub fn output_len(mut self, v: Byte) -> Self {
+        self.output_len = v;
+        self
+    }
+}
+impl molecule::prelude::Builder for ExtraCommitmentDataBuilder {
+    type Entity = ExtraCommitmentData;
+    const NAME: &'static str = "ExtraCommitmentDataBuilder";
+    fn expected_length(&self) -> usize {
+        Self::TOTAL_SIZE
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        writer.write_all(self.input_len.as_slice())?;
+        writer.write_all(self.output_len.as_slice())?;
+        Ok(())
+    }
+    fn build(&self) -> Self::Entity {
+        let mut inner = Vec::with_capacity(self.expected_length());
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        ExtraCommitmentData::new_unchecked(inner.into())
+    }
+}
+#[derive(Clone)]
+pub struct Uint16(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for Uint16 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl ::core::fmt::Debug for Uint16 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl ::core::fmt::Display for Uint16 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        let raw_data = hex_string(&self.raw_data());
+        write!(f, "{}(0x{})", Self::NAME, raw_data)
+    }
+}
+impl ::core::default::Default for Uint16 {
+    fn default() -> Self {
+        let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
+        Uint16::new_unchecked(v)
+    }
+}
+impl Uint16 {
+    const DEFAULT_VALUE: [u8; 2] = [0, 0];
+    pub const TOTAL_SIZE: usize = 2;
+    pub const ITEM_SIZE: usize = 1;
+    pub const ITEM_COUNT: usize = 2;
+    pub fn nth0(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(0..1))
+    }
+    pub fn nth1(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(1..2))
+    }
+    pub fn raw_data(&self) -> molecule::bytes::Bytes {
+        self.as_bytes()
+    }
+    pub fn as_reader<'r>(&'r self) -> Uint16Reader<'r> {
+        Uint16Reader::new_unchecked(self.as_slice())
+    }
+}
+impl molecule::prelude::Entity for Uint16 {
+    type Builder = Uint16Builder;
+    const NAME: &'static str = "Uint16";
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        Uint16(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        Uint16Reader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        Uint16Reader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().set([self.nth0(), self.nth1()])
+    }
+}
+#[derive(Clone, Copy)]
+pub struct Uint16Reader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for Uint16Reader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl<'r> ::core::fmt::Debug for Uint16Reader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl<'r> ::core::fmt::Display for Uint16Reader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        let raw_data = hex_string(&self.raw_data());
+        write!(f, "{}(0x{})", Self::NAME, raw_data)
+    }
+}
+impl<'r> Uint16Reader<'r> {
+    pub const TOTAL_SIZE: usize = 2;
+    pub const ITEM_SIZE: usize = 1;
+    pub const ITEM_COUNT: usize = 2;
+    pub fn nth0(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[0..1])
+    }
+    pub fn nth1(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[1..2])
+    }
+    pub fn raw_data(&self) -> &'r [u8] {
+        self.as_slice()
+    }
+}
+impl<'r> molecule::prelude::Reader<'r> for Uint16Reader<'r> {
+    type Entity = Uint16;
+    const NAME: &'static str = "Uint16Reader";
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        Uint16Reader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
+    fn verify(slice: &[u8], _compatible: bool) -> molecule::error::VerificationResult<()> {
+        use molecule::verification_error as ve;
+        let slice_len = slice.len();
+        if slice_len != Self::TOTAL_SIZE {
+            return ve!(Self, TotalSizeNotMatch, Self::TOTAL_SIZE, slice_len);
+        }
+        Ok(())
+    }
+}
+pub struct Uint16Builder(pub(crate) [Byte; 2]);
+impl ::core::fmt::Debug for Uint16Builder {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:?})", Self::NAME, &self.0[..])
+    }
+}
+impl ::core::default::Default for Uint16Builder {
+    fn default() -> Self {
+        Uint16Builder([Byte::default(), Byte::default()])
+    }
+}
+impl Uint16Builder {
+    pub const TOTAL_SIZE: usize = 2;
+    pub const ITEM_SIZE: usize = 1;
+    pub const ITEM_COUNT: usize = 2;
+    pub fn set(mut self, v: [Byte; 2]) -> Self {
+        self.0 = v;
+        self
+    }
+    pub fn nth0(mut self, v: Byte) -> Self {
+        self.0[0] = v;
+        self
+    }
+    pub fn nth1(mut self, v: Byte) -> Self {
+        self.0[1] = v;
+        self
+    }
+}
+impl molecule::prelude::Builder for Uint16Builder {
+    type Entity = Uint16;
+    const NAME: &'static str = "Uint16Builder";
+    fn expected_length(&self) -> usize {
+        Self::TOTAL_SIZE
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        writer.write_all(self.0[0].as_slice())?;
+        writer.write_all(self.0[1].as_slice())?;
+        Ok(())
+    }
+    fn build(&self) -> Self::Entity {
+        let mut inner = Vec::with_capacity(self.expected_length());
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        Uint16::new_unchecked(inner.into())
+    }
+}
+#[derive(Clone)]
 pub struct RGBPPUnlock(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for RGBPPUnlock {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -366,7 +706,9 @@ impl ::core::fmt::Debug for RGBPPUnlock {
 impl ::core::fmt::Display for RGBPPUnlock {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(f, "{}: {}", "btc_tx", self.btc_tx())?;
+        write!(f, "{}: {}", "version", self.version())?;
+        write!(f, ", {}: {}", "extra_data", self.extra_data())?;
+        write!(f, ", {}: {}", "btc_tx", self.btc_tx())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -381,8 +723,10 @@ impl ::core::default::Default for RGBPPUnlock {
     }
 }
 impl RGBPPUnlock {
-    const DEFAULT_VALUE: [u8; 12] = [12, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0];
-    pub const FIELD_COUNT: usize = 1;
+    const DEFAULT_VALUE: [u8; 24] = [
+        24, 0, 0, 0, 16, 0, 0, 0, 18, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    ];
+    pub const FIELD_COUNT: usize = 3;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
     }
@@ -399,11 +743,23 @@ impl RGBPPUnlock {
     pub fn has_extra_fields(&self) -> bool {
         Self::FIELD_COUNT != self.field_count()
     }
-    pub fn btc_tx(&self) -> Bytes {
+    pub fn version(&self) -> Uint16 {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
+        let end = molecule::unpack_number(&slice[8..]) as usize;
+        Uint16::new_unchecked(self.0.slice(start..end))
+    }
+    pub fn extra_data(&self) -> ExtraCommitmentData {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[8..]) as usize;
+        let end = molecule::unpack_number(&slice[12..]) as usize;
+        ExtraCommitmentData::new_unchecked(self.0.slice(start..end))
+    }
+    pub fn btc_tx(&self) -> Bytes {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[12..]) as usize;
         if self.has_extra_fields() {
-            let end = molecule::unpack_number(&slice[8..]) as usize;
+            let end = molecule::unpack_number(&slice[16..]) as usize;
             Bytes::new_unchecked(self.0.slice(start..end))
         } else {
             Bytes::new_unchecked(self.0.slice(start..))
@@ -435,7 +791,10 @@ impl molecule::prelude::Entity for RGBPPUnlock {
         ::core::default::Default::default()
     }
     fn as_builder(self) -> Self::Builder {
-        Self::new_builder().btc_tx(self.btc_tx())
+        Self::new_builder()
+            .version(self.version())
+            .extra_data(self.extra_data())
+            .btc_tx(self.btc_tx())
     }
 }
 #[derive(Clone, Copy)]
@@ -457,7 +816,9 @@ impl<'r> ::core::fmt::Debug for RGBPPUnlockReader<'r> {
 impl<'r> ::core::fmt::Display for RGBPPUnlockReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(f, "{}: {}", "btc_tx", self.btc_tx())?;
+        write!(f, "{}: {}", "version", self.version())?;
+        write!(f, ", {}: {}", "extra_data", self.extra_data())?;
+        write!(f, ", {}: {}", "btc_tx", self.btc_tx())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -466,7 +827,7 @@ impl<'r> ::core::fmt::Display for RGBPPUnlockReader<'r> {
     }
 }
 impl<'r> RGBPPUnlockReader<'r> {
-    pub const FIELD_COUNT: usize = 1;
+    pub const FIELD_COUNT: usize = 3;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
     }
@@ -483,11 +844,23 @@ impl<'r> RGBPPUnlockReader<'r> {
     pub fn has_extra_fields(&self) -> bool {
         Self::FIELD_COUNT != self.field_count()
     }
-    pub fn btc_tx(&self) -> BytesReader<'r> {
+    pub fn version(&self) -> Uint16Reader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
+        let end = molecule::unpack_number(&slice[8..]) as usize;
+        Uint16Reader::new_unchecked(&self.as_slice()[start..end])
+    }
+    pub fn extra_data(&self) -> ExtraCommitmentDataReader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[8..]) as usize;
+        let end = molecule::unpack_number(&slice[12..]) as usize;
+        ExtraCommitmentDataReader::new_unchecked(&self.as_slice()[start..end])
+    }
+    pub fn btc_tx(&self) -> BytesReader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[12..]) as usize;
         if self.has_extra_fields() {
-            let end = molecule::unpack_number(&slice[8..]) as usize;
+            let end = molecule::unpack_number(&slice[16..]) as usize;
             BytesReader::new_unchecked(&self.as_slice()[start..end])
         } else {
             BytesReader::new_unchecked(&self.as_slice()[start..])
@@ -540,16 +913,28 @@ impl<'r> molecule::prelude::Reader<'r> for RGBPPUnlockReader<'r> {
         if offsets.windows(2).any(|i| i[0] > i[1]) {
             return ve!(Self, OffsetsNotMatch);
         }
-        BytesReader::verify(&slice[offsets[0]..offsets[1]], compatible)?;
+        Uint16Reader::verify(&slice[offsets[0]..offsets[1]], compatible)?;
+        ExtraCommitmentDataReader::verify(&slice[offsets[1]..offsets[2]], compatible)?;
+        BytesReader::verify(&slice[offsets[2]..offsets[3]], compatible)?;
         Ok(())
     }
 }
 #[derive(Debug, Default)]
 pub struct RGBPPUnlockBuilder {
+    pub(crate) version: Uint16,
+    pub(crate) extra_data: ExtraCommitmentData,
     pub(crate) btc_tx: Bytes,
 }
 impl RGBPPUnlockBuilder {
-    pub const FIELD_COUNT: usize = 1;
+    pub const FIELD_COUNT: usize = 3;
+    pub fn version(mut self, v: Uint16) -> Self {
+        self.version = v;
+        self
+    }
+    pub fn extra_data(mut self, v: ExtraCommitmentData) -> Self {
+        self.extra_data = v;
+        self
+    }
     pub fn btc_tx(mut self, v: Bytes) -> Self {
         self.btc_tx = v;
         self
@@ -559,17 +944,26 @@ impl molecule::prelude::Builder for RGBPPUnlockBuilder {
     type Entity = RGBPPUnlock;
     const NAME: &'static str = "RGBPPUnlockBuilder";
     fn expected_length(&self) -> usize {
-        molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1) + self.btc_tx.as_slice().len()
+        molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
+            + self.version.as_slice().len()
+            + self.extra_data.as_slice().len()
+            + self.btc_tx.as_slice().len()
     }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
         let mut offsets = Vec::with_capacity(Self::FIELD_COUNT);
+        offsets.push(total_size);
+        total_size += self.version.as_slice().len();
+        offsets.push(total_size);
+        total_size += self.extra_data.as_slice().len();
         offsets.push(total_size);
         total_size += self.btc_tx.as_slice().len();
         writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
         for offset in offsets.into_iter() {
             writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
         }
+        writer.write_all(self.version.as_slice())?;
+        writer.write_all(self.extra_data.as_slice())?;
         writer.write_all(self.btc_tx.as_slice())?;
         Ok(())
     }

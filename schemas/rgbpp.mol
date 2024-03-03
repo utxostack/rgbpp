@@ -14,8 +14,17 @@ struct RGBPPLock {
   btc_txid: Byte32,
 }
 
+struct ExtraCommitmentData {
+ input_len: byte,
+ output_len: byte,
+}
+
 # RGBPP unlock witness
+array Uint16 [byte; 2];
+
 table RGBPPUnlock {
+  version: Uint16,
+  extra_data: ExtraCommitmentData,
   btc_tx: Bytes,
 }
 
