@@ -4,24 +4,20 @@
 #[cfg(test)]
 extern crate alloc;
 
-use alloc::vec::Vec;
 #[cfg(not(test))]
 use ckb_std::default_alloc;
 use ckb_std::{
     ckb_constants::Source,
     ckb_types::{
-        bytes::Bytes,
         core::ScriptHashType,
-        packed::{Byte32, CellDep, Transaction},
+        packed::{Byte32, Transaction},
         prelude::{Builder, Entity, Pack, Unpack},
     },
     error::SysError,
     high_level::{
-        load_cell_data, load_cell_lock, load_cell_type, load_cell_type_hash, load_input_out_point,
-        load_script, load_transaction, load_witness, load_witness_args,
-        look_for_dep_with_data_hash, look_for_dep_with_hash2, QueryIter,
+        load_cell_data, load_cell_lock, load_cell_type_hash, load_script, load_transaction,
+        load_witness_args, look_for_dep_with_hash2, QueryIter,
     },
-    syscalls::load_cell_code,
 };
 use rgbpp_core::{
     bitcoin::{self, parse_btc_tx, BTCTx, Digest, Sha256},
@@ -159,7 +155,7 @@ fn verify_unlock(
     let is_found = btc_tx
         .inputs
         .iter()
-        .any(|txin| &txin.previous_output == &expected_out_point);
+        .any(|txin| txin.previous_output == expected_out_point);
     if !is_found {
         panic!("Bitcoin transaction doesn't unlock this cell");
     }
@@ -171,7 +167,7 @@ fn verify_unlock(
     }
 
     // verify commitment
-    check_btc_tx_commitment(config, &btc_tx, ckb_tx, unlock_witness);
+    check_btc_tx_commitment(config, btc_tx, ckb_tx, unlock_witness);
     Ok(())
 }
 
@@ -215,7 +211,7 @@ fn check_btc_tx_commitment(
     let mut hasher = Sha256::new();
     hasher.update(b"RGB++");
     hasher.update(version.as_slice());
-    hasher.update(&[input_len, output_len]);
+    hasher.update([input_len, output_len]);
     for input in raw_ckb_tx.inputs().into_iter().take(input_len.into()) {
         hasher.update(input.previous_output().as_slice());
     }
@@ -263,7 +259,7 @@ fn check_btc_tx_exists(config: &RGBPPConfig, btc_txid: &Byte32) -> Result<bool, 
     let index = QueryIter::new(load_cell_type_hash, Source::CellDep)
         .enumerate()
         .find_map(|(index, type_hash)| {
-            if type_hash.is_some_and(|type_hash| &type_hash == btc_lc_type_hash.as_slice()) {
+            if type_hash.is_some_and(|type_hash| type_hash == btc_lc_type_hash.as_slice()) {
                 Some(index)
             } else {
                 None
@@ -271,5 +267,5 @@ fn check_btc_tx_exists(config: &RGBPPConfig, btc_txid: &Byte32) -> Result<bool, 
         })
         .expect("can't find light client cell");
     let data = load_cell_data(index, Source::CellDep)?;
-    Ok(&data == btc_txid.as_slice())
+    Ok(data == btc_txid.as_slice())
 }

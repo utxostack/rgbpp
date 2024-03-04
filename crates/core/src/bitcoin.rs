@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 use ckb_gen_types::{packed::Byte32, prelude::Pack};
-use molecule::bytes::{Buf, Bytes};
+use molecule::bytes::Bytes;
 pub use sha2::{Digest, Sha256};
 
 const OP_RETURN: u8 = 0x6A;
@@ -77,7 +77,7 @@ impl<'r> Parser<'r> {
             0xFD => {
                 let v = self.read_u16();
                 assert!(v >= 0xFD);
-                v.try_into().expect("overflow")
+                v.into()
             }
             0xFE => {
                 let v = self.read_u32();
