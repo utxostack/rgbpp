@@ -156,7 +156,7 @@ pub fn parse_btc_tx(data: &Bytes) -> BTCTx {
 }
 
 pub fn extract_commitment(btc_tx: &BTCTx) -> Option<Byte32> {
-    // find frist op_return, other op_return must be ignored
+    // find first op_return, other op_return must be ignored
     let op_return_out = btc_tx
         .outputs
         .iter()
