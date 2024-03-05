@@ -10,18 +10,18 @@ use ckb_std::default_alloc;
 use ckb_std::{
     ckb_constants::Source,
     ckb_types::{
-        core::ScriptHashType,
         packed::{Byte32, Transaction},
         prelude::{Builder, Entity, Pack, Unpack},
     },
     error::SysError,
     high_level::{
-        load_cell_data, load_cell_lock, load_cell_type_hash, load_script, load_transaction,
-        load_witness_args, look_for_dep_with_hash2, QueryIter,
+        load_cell_lock, load_cell_type_hash, load_script, load_transaction, load_witness_args,
+        QueryIter,
     },
 };
 use rgbpp_core::{
-    bitcoin::{self, parse_btc_tx, BTCTx, Digest, Sha256},
+    bitcoin::{self, parse_btc_tx, BTCTx, Digest, Sha256, MIN_BTC_TIME_LOCK_AFTER},
+    on_chain::{bitcoin_light_client::check_btc_tx_exists, utils::*},
     rgbpp::{check_btc_time_lock, check_utxo_seal, is_btc_time_lock},
     schemas::rgbpp::*,
     utils::is_script_code_equal,
@@ -30,8 +30,6 @@ use rgbpp_core::{
 ckb_std::entry!(program_entry);
 #[cfg(not(test))]
 default_alloc!();
-
-const MIN_BTC_TIME_LOCK_AFTER: u32 = 6;
 
 pub fn program_entry() -> i8 {
     match main() {
@@ -49,7 +47,7 @@ fn main() -> Result<(), SysError> {
         RGBPPLock::from_slice(&rgbpp_lock.args().raw_data()).expect("parse RGBPP lock")
     };
     let ckb_tx = load_transaction()?;
-    let config = load_rgbpp_config(&ckb_tx)?;
+    let config = load_config::<RGBPPConfig>(&ckb_tx)?;
     let unlock_witness = fetch_unlock_from_witness()?;
 
     // parse bitcoin transaction
@@ -59,53 +57,6 @@ fn main() -> Result<(), SysError> {
     verify_unlock(&config, &lock_args, &unlock_witness, &btc_tx, &ckb_tx)?;
     verify_outputs(&config, &btc_tx)?;
     Ok(())
-}
-
-fn byte_to_script_hash_type(v: u8) -> Option<ScriptHashType> {
-    match v {
-        0 => Some(ScriptHashType::Data),
-        1 => Some(ScriptHashType::Type),
-        2 => Some(ScriptHashType::Data1),
-        4 => Some(ScriptHashType::Data2),
-        _ => None,
-    }
-}
-
-/// Config cell is deployed together with the current contract
-///
-/// ``` yaml
-/// contract_deployment_transaction:
-///   - output(index=0, data=rgbpp_code)
-///   - output(index=1, data=rgbpp_config)
-/// ```
-fn load_rgbpp_config(tx: &Transaction) -> Result<RGBPPConfig, SysError> {
-    // get current script
-    let script = load_script()?;
-    let script_hash_type: ScriptHashType =
-        byte_to_script_hash_type(script.hash_type().into()).expect("parse script hash type");
-    // look up script dep cell
-    let cell_dep_index = look_for_dep_with_hash2(script.code_hash().as_slice(), script_hash_type)?;
-    let raw_tx = tx.raw();
-    let script_cell_dep = raw_tx
-        .cell_deps()
-        .get(cell_dep_index)
-        .expect("find script cell dep");
-    let script_out_point_index: u32 = script_cell_dep.out_point().index().unpack();
-    assert_eq!(script_out_point_index, 0, "script must be deployed on 0");
-    // look up config dep cell
-    let config_cell_dep_index = raw_tx
-        .cell_deps()
-        .into_iter()
-        .enumerate()
-        .find(|(_index, cell_dep)| {
-            let index: u32 = cell_dep.out_point().index().unpack();
-            index == 1 && cell_dep.out_point().tx_hash() == script_cell_dep.out_point().tx_hash()
-        })
-        .expect("find config cell dep")
-        .0;
-    let data = load_cell_data(config_cell_dep_index, Source::CellDep)?;
-    let config = RGBPPConfig::from_slice(&data).expect("parse config");
-    Ok(config)
 }
 
 /// Verify outputs cells is protected with RGB++ lock
@@ -173,7 +124,7 @@ fn verify_unlock(
     }
 
     // check bitcoin transaction exists in light client
-    let is_exists = check_btc_tx_exists(config, &btc_tx.txid)?;
+    let is_exists = check_btc_tx_exists(&config.btc_lc_type_hash(), &btc_tx.txid, 0)?;
     if !is_exists {
         panic!("Bitcoin transaction doesn't exists in the light client");
     }
@@ -262,22 +213,4 @@ fn check_btc_tx_commitment(
     // double sha256
     let commitment = bitcoin::sha2(&hasher.finalize()).pack();
     assert_eq!(commitment, btc_commitment, "check commitment");
-}
-
-/// Check light client cell
-/// TODO this is a mock implementation!!!
-fn check_btc_tx_exists(config: &RGBPPConfig, btc_txid: &Byte32) -> Result<bool, SysError> {
-    let btc_lc_type_hash = config.btc_lc_type_hash();
-    let index = QueryIter::new(load_cell_type_hash, Source::CellDep)
-        .enumerate()
-        .find_map(|(index, type_hash)| {
-            if type_hash.is_some_and(|type_hash| type_hash == btc_lc_type_hash.as_slice()) {
-                Some(index)
-            } else {
-                None
-            }
-        })
-        .expect("can't find light client cell");
-    let data = load_cell_data(index, Source::CellDep)?;
-    Ok(data == btc_txid.as_slice())
 }

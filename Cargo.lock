@@ -78,6 +78,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "btc-time-lock"
+version = "0.1.0"
+dependencies = [
+ "ckb-std",
+ "rgbpp-core",
+]
+
+[[package]]
 name = "buddy-alloc"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1113,6 +1121,7 @@ name = "rgbpp-core"
 version = "0.1.0"
 dependencies = [
  "ckb-gen-types",
+ "ckb-std",
  "molecule",
  "sha2",
 ]

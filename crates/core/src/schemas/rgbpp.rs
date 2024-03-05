@@ -1264,3 +1264,154 @@ impl molecule::prelude::Builder for BTCTimeLockBuilder {
         BTCTimeLock::new_unchecked(inner.into())
     }
 }
+#[derive(Clone)]
+pub struct BTCTimeLockConfig(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for BTCTimeLockConfig {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl ::core::fmt::Debug for BTCTimeLockConfig {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl ::core::fmt::Display for BTCTimeLockConfig {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} {{ ", Self::NAME)?;
+        write!(f, "{}: {}", "btc_lc_type_hash", self.btc_lc_type_hash())?;
+        write!(f, " }}")
+    }
+}
+impl ::core::default::Default for BTCTimeLockConfig {
+    fn default() -> Self {
+        let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
+        BTCTimeLockConfig::new_unchecked(v)
+    }
+}
+impl BTCTimeLockConfig {
+    const DEFAULT_VALUE: [u8; 32] = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0,
+    ];
+    pub const TOTAL_SIZE: usize = 32;
+    pub const FIELD_SIZES: [usize; 1] = [32];
+    pub const FIELD_COUNT: usize = 1;
+    pub fn btc_lc_type_hash(&self) -> Byte32 {
+        Byte32::new_unchecked(self.0.slice(0..32))
+    }
+    pub fn as_reader<'r>(&'r self) -> BTCTimeLockConfigReader<'r> {
+        BTCTimeLockConfigReader::new_unchecked(self.as_slice())
+    }
+}
+impl molecule::prelude::Entity for BTCTimeLockConfig {
+    type Builder = BTCTimeLockConfigBuilder;
+    const NAME: &'static str = "BTCTimeLockConfig";
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        BTCTimeLockConfig(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        BTCTimeLockConfigReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        BTCTimeLockConfigReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().btc_lc_type_hash(self.btc_lc_type_hash())
+    }
+}
+#[derive(Clone, Copy)]
+pub struct BTCTimeLockConfigReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for BTCTimeLockConfigReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl<'r> ::core::fmt::Debug for BTCTimeLockConfigReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl<'r> ::core::fmt::Display for BTCTimeLockConfigReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} {{ ", Self::NAME)?;
+        write!(f, "{}: {}", "btc_lc_type_hash", self.btc_lc_type_hash())?;
+        write!(f, " }}")
+    }
+}
+impl<'r> BTCTimeLockConfigReader<'r> {
+    pub const TOTAL_SIZE: usize = 32;
+    pub const FIELD_SIZES: [usize; 1] = [32];
+    pub const FIELD_COUNT: usize = 1;
+    pub fn btc_lc_type_hash(&self) -> Byte32Reader<'r> {
+        Byte32Reader::new_unchecked(&self.as_slice()[0..32])
+    }
+}
+impl<'r> molecule::prelude::Reader<'r> for BTCTimeLockConfigReader<'r> {
+    type Entity = BTCTimeLockConfig;
+    const NAME: &'static str = "BTCTimeLockConfigReader";
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        BTCTimeLockConfigReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
+    fn verify(slice: &[u8], _compatible: bool) -> molecule::error::VerificationResult<()> {
+        use molecule::verification_error as ve;
+        let slice_len = slice.len();
+        if slice_len != Self::TOTAL_SIZE {
+            return ve!(Self, TotalSizeNotMatch, Self::TOTAL_SIZE, slice_len);
+        }
+        Ok(())
+    }
+}
+#[derive(Debug, Default)]
+pub struct BTCTimeLockConfigBuilder {
+    pub(crate) btc_lc_type_hash: Byte32,
+}
+impl BTCTimeLockConfigBuilder {
+    pub const TOTAL_SIZE: usize = 32;
+    pub const FIELD_SIZES: [usize; 1] = [32];
+    pub const FIELD_COUNT: usize = 1;
+    pub fn btc_lc_type_hash(mut self, v: Byte32) -> Self {
+        self.btc_lc_type_hash = v;
+        self
+    }
+}
+impl molecule::prelude::Builder for BTCTimeLockConfigBuilder {
+    type Entity = BTCTimeLockConfig;
+    const NAME: &'static str = "BTCTimeLockConfigBuilder";
+    fn expected_length(&self) -> usize {
+        Self::TOTAL_SIZE
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        writer.write_all(self.btc_lc_type_hash.as_slice())?;
+        Ok(())
+    }
+    fn build(&self) -> Self::Entity {
+        let mut inner = Vec::with_capacity(self.expected_length());
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        BTCTimeLockConfig::new_unchecked(inner.into())
+    }
+}

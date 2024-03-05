@@ -5,6 +5,8 @@ pub use sha2::{Digest, Sha256};
 const OP_RETURN: u8 = 0x6A;
 const OP_PUSHBYTES_32: u8 = 0x20;
 
+pub const MIN_BTC_TIME_LOCK_AFTER: u32 = 6;
+
 pub fn sha2(data: &[u8]) -> [u8; 32] {
     let mut hasher = Sha256::new();
     hasher.update(data);
