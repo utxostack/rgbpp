@@ -1,6 +1,5 @@
 use alloc::vec::Vec;
-use ckb_gen_types::{packed::Byte32, prelude::Pack};
-use molecule::bytes::Bytes;
+use ckb_gen_types::{bytes::Bytes, packed::Byte32, prelude::*};
 pub use sha2::{Digest, Sha256};
 
 const OP_RETURN: u8 = 0x6A;
@@ -99,7 +98,7 @@ impl<'r> Parser<'r> {
     }
 
     pub fn read_bytes(&mut self, n: usize) -> Bytes {
-        Bytes::copy_from_slice(self.read_slice(n))
+        self.read_slice(n).to_vec().into()
     }
 
     pub fn read_txin(&mut self) -> TxIn {

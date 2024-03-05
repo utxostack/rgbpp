@@ -30,8 +30,8 @@ table RGBPPUnlock {
 
 # BTCTimeLock
 
-struct BTCTimeLock {
-  lock_hash: Byte32,
+table BTCTimeLock {
+  lock_script: Script,
   after: Uint32,
   btc_txid: Byte32,
 }

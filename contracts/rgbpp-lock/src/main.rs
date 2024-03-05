@@ -4,6 +4,7 @@
 #[cfg(test)]
 extern crate alloc;
 
+use alloc::vec::Vec;
 #[cfg(not(test))]
 use ckb_std::default_alloc;
 use ckb_std::{
@@ -60,6 +61,16 @@ fn main() -> Result<(), SysError> {
     Ok(())
 }
 
+fn byte_to_script_hash_type(v: u8) -> Option<ScriptHashType> {
+    match v {
+        0 => Some(ScriptHashType::Data),
+        1 => Some(ScriptHashType::Type),
+        2 => Some(ScriptHashType::Data1),
+        4 => Some(ScriptHashType::Data2),
+        _ => None,
+    }
+}
+
 /// Config cell is deployed together with the current contract
 ///
 /// ``` yaml
@@ -70,7 +81,8 @@ fn main() -> Result<(), SysError> {
 fn load_rgbpp_config(tx: &Transaction) -> Result<RGBPPConfig, SysError> {
     // get current script
     let script = load_script()?;
-    let script_hash_type: ScriptHashType = script.hash_type().try_into().unwrap();
+    let script_hash_type: ScriptHashType =
+        byte_to_script_hash_type(script.hash_type().into()).expect("parse script hash type");
     // look up script dep cell
     let cell_dep_index = look_for_dep_with_hash2(script.code_hash().as_slice(), script_hash_type)?;
     let raw_tx = tx.raw();
@@ -243,8 +255,8 @@ fn check_btc_tx_commitment(
         } else {
             hasher.update(output.as_slice());
         }
-
-        hasher.update(&data.raw_data());
+        let data: Vec<u8> = data.raw_data().into();
+        hasher.update(&data);
     }
 
     // double sha256

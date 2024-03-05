@@ -993,9 +993,13 @@ impl ::core::fmt::Debug for BTCTimeLock {
 impl ::core::fmt::Display for BTCTimeLock {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(f, "{}: {}", "lock_hash", self.lock_hash())?;
+        write!(f, "{}: {}", "lock_script", self.lock_script())?;
         write!(f, ", {}: {}", "after", self.after())?;
         write!(f, ", {}: {}", "btc_txid", self.btc_txid())?;
+        let extra_count = self.count_extra_fields();
+        if extra_count != 0 {
+            write!(f, ", .. ({} fields)", extra_count)?;
+        }
         write!(f, " }}")
     }
 }
@@ -1006,22 +1010,50 @@ impl ::core::default::Default for BTCTimeLock {
     }
 }
 impl BTCTimeLock {
-    const DEFAULT_VALUE: [u8; 68] = [
+    const DEFAULT_VALUE: [u8; 105] = [
+        105, 0, 0, 0, 16, 0, 0, 0, 69, 0, 0, 0, 73, 0, 0, 0, 53, 0, 0, 0, 16, 0, 0, 0, 48, 0, 0, 0,
+        49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
-    pub const TOTAL_SIZE: usize = 68;
-    pub const FIELD_SIZES: [usize; 3] = [32, 4, 32];
     pub const FIELD_COUNT: usize = 3;
-    pub fn lock_hash(&self) -> Byte32 {
-        Byte32::new_unchecked(self.0.slice(0..32))
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn field_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn count_extra_fields(&self) -> usize {
+        self.field_count() - Self::FIELD_COUNT
+    }
+    pub fn has_extra_fields(&self) -> bool {
+        Self::FIELD_COUNT != self.field_count()
+    }
+    pub fn lock_script(&self) -> Script {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[4..]) as usize;
+        let end = molecule::unpack_number(&slice[8..]) as usize;
+        Script::new_unchecked(self.0.slice(start..end))
     }
     pub fn after(&self) -> Uint32 {
-        Uint32::new_unchecked(self.0.slice(32..36))
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[8..]) as usize;
+        let end = molecule::unpack_number(&slice[12..]) as usize;
+        Uint32::new_unchecked(self.0.slice(start..end))
     }
     pub fn btc_txid(&self) -> Byte32 {
-        Byte32::new_unchecked(self.0.slice(36..68))
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[12..]) as usize;
+        if self.has_extra_fields() {
+            let end = molecule::unpack_number(&slice[16..]) as usize;
+            Byte32::new_unchecked(self.0.slice(start..end))
+        } else {
+            Byte32::new_unchecked(self.0.slice(start..))
+        }
     }
     pub fn as_reader<'r>(&'r self) -> BTCTimeLockReader<'r> {
         BTCTimeLockReader::new_unchecked(self.as_slice())
@@ -1050,7 +1082,7 @@ impl molecule::prelude::Entity for BTCTimeLock {
     }
     fn as_builder(self) -> Self::Builder {
         Self::new_builder()
-            .lock_hash(self.lock_hash())
+            .lock_script(self.lock_script())
             .after(self.after())
             .btc_txid(self.btc_txid())
     }
@@ -1074,24 +1106,55 @@ impl<'r> ::core::fmt::Debug for BTCTimeLockReader<'r> {
 impl<'r> ::core::fmt::Display for BTCTimeLockReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(f, "{}: {}", "lock_hash", self.lock_hash())?;
+        write!(f, "{}: {}", "lock_script", self.lock_script())?;
         write!(f, ", {}: {}", "after", self.after())?;
         write!(f, ", {}: {}", "btc_txid", self.btc_txid())?;
+        let extra_count = self.count_extra_fields();
+        if extra_count != 0 {
+            write!(f, ", .. ({} fields)", extra_count)?;
+        }
         write!(f, " }}")
     }
 }
 impl<'r> BTCTimeLockReader<'r> {
-    pub const TOTAL_SIZE: usize = 68;
-    pub const FIELD_SIZES: [usize; 3] = [32, 4, 32];
     pub const FIELD_COUNT: usize = 3;
-    pub fn lock_hash(&self) -> Byte32Reader<'r> {
-        Byte32Reader::new_unchecked(&self.as_slice()[0..32])
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn field_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn count_extra_fields(&self) -> usize {
+        self.field_count() - Self::FIELD_COUNT
+    }
+    pub fn has_extra_fields(&self) -> bool {
+        Self::FIELD_COUNT != self.field_count()
+    }
+    pub fn lock_script(&self) -> ScriptReader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[4..]) as usize;
+        let end = molecule::unpack_number(&slice[8..]) as usize;
+        ScriptReader::new_unchecked(&self.as_slice()[start..end])
     }
     pub fn after(&self) -> Uint32Reader<'r> {
-        Uint32Reader::new_unchecked(&self.as_slice()[32..36])
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[8..]) as usize;
+        let end = molecule::unpack_number(&slice[12..]) as usize;
+        Uint32Reader::new_unchecked(&self.as_slice()[start..end])
     }
     pub fn btc_txid(&self) -> Byte32Reader<'r> {
-        Byte32Reader::new_unchecked(&self.as_slice()[36..68])
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[12..]) as usize;
+        if self.has_extra_fields() {
+            let end = molecule::unpack_number(&slice[16..]) as usize;
+            Byte32Reader::new_unchecked(&self.as_slice()[start..end])
+        } else {
+            Byte32Reader::new_unchecked(&self.as_slice()[start..])
+        }
     }
 }
 impl<'r> molecule::prelude::Reader<'r> for BTCTimeLockReader<'r> {
@@ -1106,27 +1169,56 @@ impl<'r> molecule::prelude::Reader<'r> for BTCTimeLockReader<'r> {
     fn as_slice(&self) -> &'r [u8] {
         self.0
     }
-    fn verify(slice: &[u8], _compatible: bool) -> molecule::error::VerificationResult<()> {
+    fn verify(slice: &[u8], compatible: bool) -> molecule::error::VerificationResult<()> {
         use molecule::verification_error as ve;
         let slice_len = slice.len();
-        if slice_len != Self::TOTAL_SIZE {
-            return ve!(Self, TotalSizeNotMatch, Self::TOTAL_SIZE, slice_len);
+        if slice_len < molecule::NUMBER_SIZE {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE, slice_len);
         }
+        let total_size = molecule::unpack_number(slice) as usize;
+        if slice_len != total_size {
+            return ve!(Self, TotalSizeNotMatch, total_size, slice_len);
+        }
+        if slice_len < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE * 2, slice_len);
+        }
+        let offset_first = molecule::unpack_number(&slice[molecule::NUMBER_SIZE..]) as usize;
+        if offset_first % molecule::NUMBER_SIZE != 0 || offset_first < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        if slice_len < offset_first {
+            return ve!(Self, HeaderIsBroken, offset_first, slice_len);
+        }
+        let field_count = offset_first / molecule::NUMBER_SIZE - 1;
+        if field_count < Self::FIELD_COUNT {
+            return ve!(Self, FieldCountNotMatch, Self::FIELD_COUNT, field_count);
+        } else if !compatible && field_count > Self::FIELD_COUNT {
+            return ve!(Self, FieldCountNotMatch, Self::FIELD_COUNT, field_count);
+        };
+        let mut offsets: Vec<usize> = slice[molecule::NUMBER_SIZE..offset_first]
+            .chunks_exact(molecule::NUMBER_SIZE)
+            .map(|x| molecule::unpack_number(x) as usize)
+            .collect();
+        offsets.push(total_size);
+        if offsets.windows(2).any(|i| i[0] > i[1]) {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        ScriptReader::verify(&slice[offsets[0]..offsets[1]], compatible)?;
+        Uint32Reader::verify(&slice[offsets[1]..offsets[2]], compatible)?;
+        Byte32Reader::verify(&slice[offsets[2]..offsets[3]], compatible)?;
         Ok(())
     }
 }
 #[derive(Debug, Default)]
 pub struct BTCTimeLockBuilder {
-    pub(crate) lock_hash: Byte32,
+    pub(crate) lock_script: Script,
     pub(crate) after: Uint32,
     pub(crate) btc_txid: Byte32,
 }
 impl BTCTimeLockBuilder {
-    pub const TOTAL_SIZE: usize = 68;
-    pub const FIELD_SIZES: [usize; 3] = [32, 4, 32];
     pub const FIELD_COUNT: usize = 3;
-    pub fn lock_hash(mut self, v: Byte32) -> Self {
-        self.lock_hash = v;
+    pub fn lock_script(mut self, v: Script) -> Self {
+        self.lock_script = v;
         self
     }
     pub fn after(mut self, v: Uint32) -> Self {
@@ -1142,10 +1234,25 @@ impl molecule::prelude::Builder for BTCTimeLockBuilder {
     type Entity = BTCTimeLock;
     const NAME: &'static str = "BTCTimeLockBuilder";
     fn expected_length(&self) -> usize {
-        Self::TOTAL_SIZE
+        molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
+            + self.lock_script.as_slice().len()
+            + self.after.as_slice().len()
+            + self.btc_txid.as_slice().len()
     }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
-        writer.write_all(self.lock_hash.as_slice())?;
+        let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
+        let mut offsets = Vec::with_capacity(Self::FIELD_COUNT);
+        offsets.push(total_size);
+        total_size += self.lock_script.as_slice().len();
+        offsets.push(total_size);
+        total_size += self.after.as_slice().len();
+        offsets.push(total_size);
+        total_size += self.btc_txid.as_slice().len();
+        writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
+        for offset in offsets.into_iter() {
+            writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
+        }
+        writer.write_all(self.lock_script.as_slice())?;
         writer.write_all(self.after.as_slice())?;
         writer.write_all(self.btc_txid.as_slice())?;
         Ok(())
