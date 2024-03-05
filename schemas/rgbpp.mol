@@ -36,3 +36,8 @@ table BTCTimeLock {
   btc_txid: Byte32,
 }
 
+# BTCTimeLock config
+struct BTCTimeLockConfig {
+  # Type hash of bitcoin light client
+  btc_lc_type_hash: Byte32,
+}
