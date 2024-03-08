@@ -23,6 +23,12 @@ CONTRACT :=
 CLEAN_BUILD_DIR_FIRST := true
 BUILD_DIR := build/$(MODE)
 
+# Some older crates might not be parpared to be built against clang, we would
+# need to override CFLAGS to prepare them.
+TARGET_CFLAGS := --target=riscv64 -march=rv64imc_zba_zbb_zbc_zbs \
+	-nostdinc -nostdlib \
+	-I $(TOP)deps/ckb-c-stdlib/libc -DCKB_DECLARATION_ONLY
+
 # Pass setups to child make processes
 export CUSTOM_RUSTFLAGS
 export TOP
@@ -30,6 +36,7 @@ export CARGO_ARGS
 export MODE
 export CLANG
 export BUILD_DIR
+export TARGET_CFLAGS
 
 default: build test
 

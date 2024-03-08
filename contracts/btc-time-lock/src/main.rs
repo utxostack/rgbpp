@@ -12,7 +12,7 @@ use ckb_std::{
     error::SysError,
     high_level::{
         load_cell, load_cell_data_hash, load_cell_lock_hash, load_script, load_script_hash,
-        load_transaction, QueryIter,
+        load_transaction, load_witness_args, QueryIter,
     },
 };
 use rgbpp_core::{
@@ -38,10 +38,13 @@ fn main() -> Result<(), SysError> {
     let ckb_tx = load_transaction()?;
     check_output_cells(&lock_args)?;
     let config = load_config::<BTCTimeLockConfig>(&ckb_tx)?;
+    let unlock_witness = fetch_unlock_from_witness()?;
+    let btc_tx_proof = unlock_witness.btc_tx_proof().raw_data();
     check_btc_tx_exists(
         &config.btc_lc_type_hash(),
         &lock_args.btc_txid(),
         lock_args.after().unpack(),
+        &btc_tx_proof,
     )?;
     Ok(())
 }
@@ -50,6 +53,17 @@ fn load_lock_args() -> Result<BTCTimeLock, SysError> {
     let script = load_script()?;
     let lock = BTCTimeLock::from_slice(&script.args().raw_data()).expect("parse BTCTimeLock");
     Ok(lock)
+}
+
+fn fetch_unlock_from_witness() -> Result<BTCTimeUnlock, SysError> {
+    let witness_args = load_witness_args(0, Source::GroupInput)?;
+    match witness_args.lock().to_opt() {
+        Some(args) => {
+            let unlock = BTCTimeUnlock::from_slice(args.as_slice()).unwrap();
+            Ok(unlock)
+        }
+        None => Err(SysError::ItemMissing),
+    }
 }
 
 fn check_output_cells(lock_args: &BTCTimeLock) -> Result<(), SysError> {

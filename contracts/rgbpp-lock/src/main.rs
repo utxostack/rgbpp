@@ -124,7 +124,9 @@ fn verify_unlock(
     }
 
     // check bitcoin transaction exists in light client
-    let is_exists = check_btc_tx_exists(&config.btc_lc_type_hash(), &btc_tx.txid, 0)?;
+    let btc_tx_proof = unlock_witness.btc_tx_proof().raw_data();
+    let is_exists =
+        check_btc_tx_exists(&config.btc_lc_type_hash(), &btc_tx.txid, 0, &btc_tx_proof)?;
     if !is_exists {
         panic!("Bitcoin transaction doesn't exists in the light client");
     }
