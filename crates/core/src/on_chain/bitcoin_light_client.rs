@@ -1,13 +1,15 @@
+use ckb_bitcoin_spv_verifier::types::packed::TransactionProofReader;
 use ckb_gen_types::{packed::*, prelude::*};
 use ckb_std::{ckb_constants::Source, error::SysError, high_level::*};
 
 /// Check light client cell
-/// TODO this is a mock implementation!!!
 pub fn check_btc_tx_exists(
     btc_lc_type_hash: &Byte32,
     btc_txid: &Byte32,
-    _confirmations: usize,
+    confirmations: u32,
+    tx_proof: &[u8],
 ) -> Result<bool, SysError> {
+    let tx_proof = TransactionProofReader::from_slice(tx_proof).unwrap();
     let index = QueryIter::new(load_cell_type_hash, Source::CellDep)
         .enumerate()
         .find_map(|(index, type_hash)| {
@@ -19,5 +21,14 @@ pub fn check_btc_tx_exists(
         })
         .expect("can't find light client cell");
     let data = load_cell_data(index, Source::CellDep)?;
-    Ok(data == btc_txid.as_slice())
+    let client = ckb_bitcoin_spv_verifier::types::packed::SpvClient::from_slice(&data)
+        .expect("Bitcoin SPV Client");
+    let txid: [u8; 32] = btc_txid.as_slice().try_into().unwrap();
+    match client.verify_transaction(&txid, tx_proof, confirmations) {
+        Ok(_) => Ok(true),
+        Err(err) => {
+            ckb_std::debug!("failed to do SPV verification err: {}", err as i8);
+            Ok(false)
+        }
+    }
 }
