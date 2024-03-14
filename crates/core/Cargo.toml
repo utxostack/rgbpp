@@ -7,6 +7,7 @@ edition = "2021"
 
 [features]
 bitcoin-encoder = []
+mock-bitcoin-light-client = []
 [dependencies]
 molecule = { version = "0.7.5", default-features = false }
 ckb-gen-types = { version = "0.112.0", default-features = false }

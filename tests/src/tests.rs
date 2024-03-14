@@ -210,7 +210,7 @@ fn gen_commitment(rgbpp_tx: &TransactionView, extra_data: &ExtraCommitmentData) 
     let mut hasher = Sha256::new();
     hasher.update(b"RGB++");
     // version
-    hasher.update([0]);
+    hasher.update([0, 0]);
     let input_len = u8::from(extra_data.input_len());
     let output_len = u8::from(extra_data.output_len());
     hasher.update([input_len, output_len]);
@@ -223,7 +223,7 @@ fn gen_commitment(rgbpp_tx: &TransactionView, extra_data: &ExtraCommitmentData) 
         hasher.update(output.as_slice());
         hasher.update(&data);
     }
-    hasher.finalize().into()
+    sha2(&hasher.finalize())
 }
 
 #[test]

@@ -73,7 +73,7 @@ fn verify_outputs(config: &RGBPPConfig, btc_tx: &BTCTx) -> Result<(), SysError> 
         if is_script_code_equal(&lock, &rgbpp_lock) {
             // check new seal txid + index is valid
             let lock_args =
-                RGBPPLock::from_slice(lock.args().as_slice()).expect("Invalid RGBPP lock args");
+                RGBPPLock::from_slice(&lock.args().raw_data()).expect("Invalid RGBPP lock args");
             if check_utxo_seal(&lock_args, btc_tx) {
                 continue;
             }
