@@ -12,6 +12,8 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 #[cfg(test)]
+mod btc_mock;
+#[cfg(test)]
 mod tests;
 
 // The exact same Loader code from capsule's template, except that
@@ -81,6 +83,20 @@ impl Loader {
 
     pub fn load_binary(&self, name: &str) -> Bytes {
         let mut path = self.0.clone();
+        path.push(name);
+        let result = fs::read(&path);
+        if result.is_err() {
+            panic!("Binary {:?} is missing!", path);
+        }
+        result.unwrap().into()
+    }
+
+    pub fn load_tests_binary(&self, name: &str) -> Bytes {
+        let mut path = self.0.clone();
+        path.push("..");
+        path.push("..");
+        path.push("tests");
+        path.push("binaries");
         path.push(name);
         let result = fs::read(&path);
         if result.is_err() {
