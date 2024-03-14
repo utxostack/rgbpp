@@ -98,7 +98,7 @@ fn fetch_unlock_from_witness() -> Result<RGBPPUnlock, SysError> {
     let witness_args = load_witness_args(0, Source::GroupInput)?;
     match witness_args.lock().to_opt() {
         Some(args) => {
-            let unlock = RGBPPUnlock::from_slice(args.as_slice()).unwrap();
+            let unlock = RGBPPUnlock::from_slice(&args.raw_data()).unwrap();
             Ok(unlock)
         }
         None => Err(SysError::ItemMissing),

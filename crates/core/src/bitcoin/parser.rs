@@ -1,51 +1,9 @@
 use core::fmt::Write;
 
+use super::types::*;
+use super::utils::*;
 use alloc::vec::Vec;
 use ckb_gen_types::{bytes::Bytes, packed::Byte32, prelude::*};
-use molecule::bytes::{BufMut, BytesMut};
-pub use sha2::{Digest, Sha256};
-
-const OP_RETURN: u8 = 0x6A;
-const OP_PUSHBYTES_32: u8 = 0x20;
-
-pub const MIN_BTC_TIME_LOCK_AFTER: u32 = 6;
-
-pub fn sha2(data: &[u8]) -> [u8; 32] {
-    let mut hasher = Sha256::new();
-    hasher.update(data);
-    hasher.finalize().into()
-}
-
-pub struct TxIn {
-    pub previous_output: (Byte32, u32),
-    pub script: Bytes,
-    pub sequence: u32,
-}
-pub struct TxOut {
-    pub value: i64,
-    pub script: Bytes,
-}
-
-impl TxOut {
-    pub fn new_seal(value: i64, message: [u8; 32]) -> Self {
-        let mut script = [0u8; 34];
-        script[0] = OP_RETURN;
-        script[1] = OP_PUSHBYTES_32;
-        script[2..].copy_from_slice(&message);
-        TxOut {
-            value,
-            script: script.to_vec().into(),
-        }
-    }
-}
-
-pub struct BTCTx {
-    pub txid: Byte32,
-    pub version: u32,
-    pub inputs: Vec<TxIn>,
-    pub outputs: Vec<TxOut>,
-    pub lock_time: u32,
-}
 
 struct Parser<'r> {
     data: &'r Bytes,
@@ -141,53 +99,6 @@ impl<'r> Parser<'r> {
     }
 }
 
-struct Encoder {
-    buf: BytesMut,
-}
-
-impl Encoder {
-    pub fn new() -> Self {
-        Self {
-            buf: BytesMut::default(),
-        }
-    }
-
-    pub fn put_var_int(&mut self, n: usize) {
-        if n > 0xFFFFFFFF {
-            self.buf.put_u8(0xFF);
-            self.buf.put_u64(n as u64);
-        } else if n > 0xFFFF {
-            self.buf.put_u8(0xFE);
-            self.buf.put_u32(n as u32);
-        } else if n > 0xFD {
-            self.buf.put_u8(0xFD);
-            self.buf.put_u16(n as u16);
-        } else {
-            self.buf.put_u8(n as u8);
-        }
-    }
-
-    pub fn put_txin(&mut self, txin: &TxIn) {
-        let TxIn {
-            previous_output: (txid, vout),
-            script,
-            sequence,
-        } = txin;
-        self.buf.put_slice(txid.as_slice());
-        self.buf.put_u32(*vout);
-        self.put_var_int(script.len());
-        self.buf.put_slice(script);
-        self.buf.put_u32(*sequence);
-    }
-
-    pub fn put_txout(&mut self, txout: &TxOut) {
-        let TxOut { value, script } = txout;
-        self.buf.put_i64(*value);
-        self.put_var_int(script.len());
-        self.buf.put_slice(script);
-    }
-}
-
 pub fn parse_btc_tx(data: &Bytes) -> BTCTx {
     let txid = sha2(&sha2(data)).pack();
 
@@ -217,44 +128,4 @@ pub fn parse_btc_tx(data: &Bytes) -> BTCTx {
         outputs,
         lock_time,
     }
-}
-
-pub fn encode_btc_tx(btc_tx: BTCTx) -> Bytes {
-    let BTCTx {
-        txid,
-        version,
-        inputs,
-        outputs,
-        lock_time,
-    } = btc_tx;
-    let mut encoder = Encoder::new();
-    encoder.buf.put_u32(version);
-    encoder.put_var_int(inputs.len());
-
-    for input in inputs.iter() {
-        encoder.put_txin(input);
-    }
-
-    encoder.put_var_int(outputs.len());
-
-    for output in outputs.iter() {
-        encoder.put_txout(output);
-    }
-    encoder.buf.put_u32(lock_time);
-    encoder.buf.freeze()
-}
-
-pub fn extract_commitment(btc_tx: &BTCTx) -> Option<Byte32> {
-    // find first op_return, other op_return must be ignored
-    let op_return_out = btc_tx
-        .outputs
-        .iter()
-        .find(|output| output.script[0] == OP_RETURN)?;
-    // check push 32 bytes
-    if op_return_out.script[1] != OP_PUSHBYTES_32 || op_return_out.script.len() != 34 {
-        return None;
-    }
-    // parse commitment
-    let commitment: [u8; 32] = op_return_out.script[2..].try_into().unwrap();
-    Some(commitment.pack())
 }

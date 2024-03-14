@@ -1,4 +1,4 @@
-use ckb_testtool::ckb_types::core::TransactionView;
+use ckb_testtool::ckb_types::core::{DepType, TransactionView};
 use ckb_testtool::context::Context;
 use ckb_testtool::{
     ckb_types::{bytes::Bytes, core::ScriptHashType, packed::*, prelude::*},
@@ -316,21 +316,31 @@ fn test_rgbpp_unlock() {
     let rgbpp_tx = rgbpp_tx.as_advanced_builder().set_outputs(outputs).build();
 
     // unlock cell with btc tx
-    let unlock_witness = RGBPPUnlock::new_builder()
+    let rgbpp_unlock = RGBPPUnlock::new_builder()
         .version(Uint16::default())
         .extra_data(extra_data)
         .btc_tx(btc_tx.pack())
         .btc_tx_proof(btc_tx_proof)
         .build();
 
+    let unlock_witness = WitnessArgs::new_builder()
+        .lock(Some(rgbpp_unlock.as_bytes()).pack())
+        .build();
+
     let tx = rgbpp_tx
         .as_advanced_builder()
-        .witness(
-            WitnessArgs::new_builder()
-                .lock(Some(unlock_witness.as_bytes()).pack())
-                .build()
-                .as_bytes()
-                .pack(),
+        .witness(unlock_witness.as_bytes().pack())
+        .cell_dep(
+            CellDep::new_builder()
+                .out_point(deployed_scripts.rgbpp.config_out_point)
+                .dep_type(DepType::Code.into())
+                .build(),
+        )
+        .cell_dep(
+            CellDep::new_builder()
+                .out_point(deployed_scripts.btc_time_lock.config_out_point)
+                .dep_type(DepType::Code.into())
+                .build(),
         )
         .build();
 

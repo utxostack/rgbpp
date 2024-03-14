@@ -6,5 +6,5 @@ edition = "2021"
 [dependencies]
 ckb-testtool = "0.10.2"
 serde_json = "1.0"
-rgbpp-core = { path = "../crates/core" }
+rgbpp-core = { path = "../crates/core", features = ["bitcoin-encoder"] }
 rand = "0.8"
