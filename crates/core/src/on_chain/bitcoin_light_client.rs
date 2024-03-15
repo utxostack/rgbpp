@@ -3,6 +3,7 @@ use ckb_gen_types::{packed::*, prelude::*};
 use ckb_std::{ckb_constants::Source, error::SysError, high_level::*};
 
 /// Check light client cell
+#[cfg(not(feature = "mock-bitcoin-light-client"))]
 pub fn check_btc_tx_exists(
     btc_lc_type_hash: &Byte32,
     btc_txid: &Byte32,
@@ -31,4 +32,17 @@ pub fn check_btc_tx_exists(
             Ok(false)
         }
     }
+}
+
+#[cfg(feature = "mock-bitcoin-light-client")]
+pub fn check_btc_tx_exists(
+    btc_lc_type_hash: &Byte32,
+    btc_txid: &Byte32,
+    confirmations: u32,
+    tx_proof: &[u8],
+) -> Result<bool, SysError> {
+    ckb_std::debug!(
+        "Using Mock Bitcoin light client, please ensure do not use this binary in production"
+    );
+    Ok(true)
 }

@@ -1448,6 +1448,8 @@ name = "tests"
 version = "0.1.0"
 dependencies = [
  "ckb-testtool",
+ "rand 0.8.5",
+ "rgbpp-core",
  "serde_json",
 ]
 

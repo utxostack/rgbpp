@@ -73,7 +73,7 @@ fn verify_outputs(config: &RGBPPConfig, btc_tx: &BTCTx) -> Result<(), SysError> 
         if is_script_code_equal(&lock, &rgbpp_lock) {
             // check new seal txid + index is valid
             let lock_args =
-                RGBPPLock::from_slice(lock.args().as_slice()).expect("Invalid RGBPP lock args");
+                RGBPPLock::from_slice(&lock.args().raw_data()).expect("Invalid RGBPP lock args");
             if check_utxo_seal(&lock_args, btc_tx) {
                 continue;
             }
@@ -98,7 +98,7 @@ fn fetch_unlock_from_witness() -> Result<RGBPPUnlock, SysError> {
     let witness_args = load_witness_args(0, Source::GroupInput)?;
     match witness_args.lock().to_opt() {
         Some(args) => {
-            let unlock = RGBPPUnlock::from_slice(args.as_slice()).unwrap();
+            let unlock = RGBPPUnlock::from_slice(&args.raw_data()).unwrap();
             Ok(unlock)
         }
         None => Err(SysError::ItemMissing),
