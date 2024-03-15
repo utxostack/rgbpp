@@ -1,0 +1,23 @@
+name: Rust
+
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  ubuntu-build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install llvm 16
+      run: wget https://apt.llvm.org/llvm.sh && chmod +x llvm.sh && sudo ./llvm.sh 16 && rm llvm.sh
+    - name: Install riscv64 target
+      run: rustup target add riscv64imac-unknown-none-elf
+    - name: Build test binaries
+      run: make build CARGO_ARGS="--features=rgbpp-core/mock-bitcoin-light-client"
+    - name: Run all checks
+      run: make test check clippy
+
