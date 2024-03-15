@@ -1,10 +1,8 @@
-use core::fmt::Write;
-
 use super::types::*;
-use alloc::vec::Vec;
-use ckb_gen_types::{bytes::Bytes, packed::Byte32, prelude::*};
+
+use ckb_gen_types::{bytes::Bytes, prelude::*};
 use molecule::bytes::{BufMut, BytesMut};
-pub use sha2::{Digest, Sha256};
+pub use sha2::Digest;
 
 struct Encoder {
     buf: BytesMut,
@@ -55,7 +53,7 @@ impl Encoder {
 
 pub fn encode_btc_tx(btc_tx: BTCTx) -> Bytes {
     let BTCTx {
-        txid,
+        txid: _,
         version,
         inputs,
         outputs,

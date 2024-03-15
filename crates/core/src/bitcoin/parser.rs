@@ -1,5 +1,3 @@
-use core::fmt::Write;
-
 use super::types::*;
 use super::utils::*;
 use alloc::vec::Vec;

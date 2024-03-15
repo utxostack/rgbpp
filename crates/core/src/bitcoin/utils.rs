@@ -1,9 +1,7 @@
-use core::fmt::Write;
-
 use super::types::*;
 use super::*;
-use alloc::vec::Vec;
-use ckb_gen_types::{bytes::Bytes, packed::Byte32, prelude::*};
+
+use ckb_gen_types::{packed::Byte32, prelude::*};
 pub use sha2::{Digest, Sha256};
 
 pub fn sha2(data: &[u8]) -> [u8; 32] {

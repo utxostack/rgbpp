@@ -1,9 +1,7 @@
-use core::fmt::Write;
-
 use super::*;
 use alloc::vec::Vec;
-use ckb_gen_types::{bytes::Bytes, packed::Byte32, prelude::*};
-pub use sha2::{Digest, Sha256};
+use ckb_gen_types::{bytes::Bytes, packed::Byte32};
+pub use sha2::Digest;
 
 pub struct TxIn {
     pub previous_output: (Byte32, u32),

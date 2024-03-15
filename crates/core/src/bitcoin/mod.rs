@@ -4,11 +4,6 @@ mod parser;
 mod types;
 mod utils;
 
-use core::fmt::Write;
-
-use alloc::vec::Vec;
-use ckb_gen_types::{bytes::Bytes, packed::Byte32, prelude::*};
-
 #[cfg(feature = "bitcoin-encoder")]
 pub use encoder::*;
 pub use parser::*;
