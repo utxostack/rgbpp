@@ -12,8 +12,6 @@ use clap::{Parser, Subcommand};
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
-    /// Optional name to operate on
-    name: Option<String>,
     /// Output path
     #[arg(short, long, value_name = "FILE")]
     output: Option<PathBuf>,
@@ -37,11 +35,6 @@ enum Commands {
 
 fn main() {
     let cli = Cli::parse();
-
-    // You can check the value provided by positional arguments, or option arguments
-    if let Some(name) = cli.name.as_deref() {
-        println!("Value for name: {name}");
-    }
 
     let output_path = cli.output.expect("must set output path");
 
