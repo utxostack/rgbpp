@@ -783,6 +783,7 @@ version = "0.1.0"
 dependencies = [
  "ckb-testtool",
  "clap",
+ "hex",
  "rand 0.8.5",
  "rgbpp-core",
 ]
