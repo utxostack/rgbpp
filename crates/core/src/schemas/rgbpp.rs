@@ -21,7 +21,8 @@ impl ::core::fmt::Debug for RGBPPConfig {
 impl ::core::fmt::Display for RGBPPConfig {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(f, "{}: {}", "btc_lc_type_hash", self.btc_lc_type_hash())?;
+        write!(f, "{}: {}", "version", self.version())?;
+        write!(f, ", {}: {}", "btc_lc_type_hash", self.btc_lc_type_hash())?;
         write!(
             f,
             ", {}: {}",
@@ -38,19 +39,22 @@ impl ::core::default::Default for RGBPPConfig {
     }
 }
 impl RGBPPConfig {
-    const DEFAULT_VALUE: [u8; 64] = [
+    const DEFAULT_VALUE: [u8; 66] = [
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
     ];
-    pub const TOTAL_SIZE: usize = 64;
-    pub const FIELD_SIZES: [usize; 2] = [32, 32];
-    pub const FIELD_COUNT: usize = 2;
+    pub const TOTAL_SIZE: usize = 66;
+    pub const FIELD_SIZES: [usize; 3] = [2, 32, 32];
+    pub const FIELD_COUNT: usize = 3;
+    pub fn version(&self) -> Uint16 {
+        Uint16::new_unchecked(self.0.slice(0..2))
+    }
     pub fn btc_lc_type_hash(&self) -> Byte32 {
-        Byte32::new_unchecked(self.0.slice(0..32))
+        Byte32::new_unchecked(self.0.slice(2..34))
     }
     pub fn btc_time_lock_type_hash(&self) -> Byte32 {
-        Byte32::new_unchecked(self.0.slice(32..64))
+        Byte32::new_unchecked(self.0.slice(34..66))
     }
     pub fn as_reader<'r>(&'r self) -> RGBPPConfigReader<'r> {
         RGBPPConfigReader::new_unchecked(self.as_slice())
@@ -79,6 +83,7 @@ impl molecule::prelude::Entity for RGBPPConfig {
     }
     fn as_builder(self) -> Self::Builder {
         Self::new_builder()
+            .version(self.version())
             .btc_lc_type_hash(self.btc_lc_type_hash())
             .btc_time_lock_type_hash(self.btc_time_lock_type_hash())
     }
@@ -102,7 +107,8 @@ impl<'r> ::core::fmt::Debug for RGBPPConfigReader<'r> {
 impl<'r> ::core::fmt::Display for RGBPPConfigReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(f, "{}: {}", "btc_lc_type_hash", self.btc_lc_type_hash())?;
+        write!(f, "{}: {}", "version", self.version())?;
+        write!(f, ", {}: {}", "btc_lc_type_hash", self.btc_lc_type_hash())?;
         write!(
             f,
             ", {}: {}",
@@ -113,14 +119,17 @@ impl<'r> ::core::fmt::Display for RGBPPConfigReader<'r> {
     }
 }
 impl<'r> RGBPPConfigReader<'r> {
-    pub const TOTAL_SIZE: usize = 64;
-    pub const FIELD_SIZES: [usize; 2] = [32, 32];
-    pub const FIELD_COUNT: usize = 2;
+    pub const TOTAL_SIZE: usize = 66;
+    pub const FIELD_SIZES: [usize; 3] = [2, 32, 32];
+    pub const FIELD_COUNT: usize = 3;
+    pub fn version(&self) -> Uint16Reader<'r> {
+        Uint16Reader::new_unchecked(&self.as_slice()[0..2])
+    }
     pub fn btc_lc_type_hash(&self) -> Byte32Reader<'r> {
-        Byte32Reader::new_unchecked(&self.as_slice()[0..32])
+        Byte32Reader::new_unchecked(&self.as_slice()[2..34])
     }
     pub fn btc_time_lock_type_hash(&self) -> Byte32Reader<'r> {
-        Byte32Reader::new_unchecked(&self.as_slice()[32..64])
+        Byte32Reader::new_unchecked(&self.as_slice()[34..66])
     }
 }
 impl<'r> molecule::prelude::Reader<'r> for RGBPPConfigReader<'r> {
@@ -146,13 +155,18 @@ impl<'r> molecule::prelude::Reader<'r> for RGBPPConfigReader<'r> {
 }
 #[derive(Debug, Default)]
 pub struct RGBPPConfigBuilder {
+    pub(crate) version: Uint16,
     pub(crate) btc_lc_type_hash: Byte32,
     pub(crate) btc_time_lock_type_hash: Byte32,
 }
 impl RGBPPConfigBuilder {
-    pub const TOTAL_SIZE: usize = 64;
-    pub const FIELD_SIZES: [usize; 2] = [32, 32];
-    pub const FIELD_COUNT: usize = 2;
+    pub const TOTAL_SIZE: usize = 66;
+    pub const FIELD_SIZES: [usize; 3] = [2, 32, 32];
+    pub const FIELD_COUNT: usize = 3;
+    pub fn version(mut self, v: Uint16) -> Self {
+        self.version = v;
+        self
+    }
     pub fn btc_lc_type_hash(mut self, v: Byte32) -> Self {
         self.btc_lc_type_hash = v;
         self
@@ -169,6 +183,7 @@ impl molecule::prelude::Builder for RGBPPConfigBuilder {
         Self::TOTAL_SIZE
     }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        writer.write_all(self.version.as_slice())?;
         writer.write_all(self.btc_lc_type_hash.as_slice())?;
         writer.write_all(self.btc_time_lock_type_hash.as_slice())?;
         Ok(())

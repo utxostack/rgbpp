@@ -8,4 +8,5 @@
 
 pub use ckb_gen_types;
 pub use ckb_gen_types::packed as blockchain;
+mod conversion;
 pub mod rgbpp;

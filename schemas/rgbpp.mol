@@ -2,6 +2,7 @@ import blockchain;
 
 # RGBPP config
 struct RGBPPConfig {
+  version: Uint16,
   # Type hash of bitcoin light client
   btc_lc_type_hash: Byte32,
   # Type hash of bitcoin time lock contract

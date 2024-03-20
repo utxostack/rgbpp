@@ -27,6 +27,8 @@ enum Commands {
     },
     GenRGBPPConfig {
         #[arg(long)]
+        version: u16,
+        #[arg(long)]
         btc_lc_type_hash: String,
         #[arg(long)]
         btc_time_lock_type_hash: String,
@@ -42,10 +44,12 @@ fn main() {
     // matches just as you would the top level cmd
     match &cli.command {
         Some(Commands::GenRGBPPConfig {
+            version,
             btc_lc_type_hash,
             btc_time_lock_type_hash,
         }) => {
             let config = RGBPPConfig::new_builder()
+                .version(version.pack())
                 .btc_time_lock_type_hash(string_to_byte32(btc_time_lock_type_hash.as_str()))
                 .btc_lc_type_hash(string_to_byte32(btc_lc_type_hash.as_str()))
                 .build();
