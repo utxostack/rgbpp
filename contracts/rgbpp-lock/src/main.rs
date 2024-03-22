@@ -21,6 +21,8 @@ use ckb_std::{
 };
 use rgbpp_core::{
     bitcoin::{self, parse_btc_tx, BTCTx, Digest, Sha256, MIN_BTC_TIME_LOCK_AFTER},
+    ensure, ensure_eq,
+    error::Error,
     on_chain::{bitcoin_light_client::check_btc_tx_exists, utils::*},
     rgbpp::{check_btc_time_lock, check_utxo_seal, is_btc_time_lock},
     schemas::rgbpp::*,
@@ -35,16 +37,18 @@ pub fn program_entry() -> i8 {
     match main() {
         Ok(_) => 0,
         Err(err) => {
-            panic!("failed because {:?}", err);
+            let err_code = err as i8;
+            ckb_std::debug!("failed because {}", err_code);
+            err_code
         }
     }
 }
 
-fn main() -> Result<(), SysError> {
+fn main() -> Result<(), Error> {
     // parse config and witness
     let lock_args = {
         let rgbpp_lock = load_script()?;
-        RGBPPLock::from_slice(&rgbpp_lock.args().raw_data()).expect("parse RGBPP lock")
+        RGBPPLock::from_slice(&rgbpp_lock.args().raw_data()).map_err(|_| Error::BadRGBPPLock)?
     };
     let ckb_tx = load_transaction()?;
     let config = load_config::<RGBPPConfig>(&ckb_tx)?;
@@ -52,7 +56,7 @@ fn main() -> Result<(), SysError> {
 
     // parse bitcoin transaction
     let raw_btc_tx = unlock_witness.btc_tx().raw_data();
-    let btc_tx: BTCTx = parse_btc_tx(&raw_btc_tx);
+    let btc_tx: BTCTx = parse_btc_tx(&raw_btc_tx)?;
 
     verify_unlock(&config, &lock_args, &unlock_witness, &btc_tx, &ckb_tx)?;
     verify_outputs(&config, &btc_tx)?;
@@ -60,7 +64,7 @@ fn main() -> Result<(), SysError> {
 }
 
 /// Verify outputs cells is protected with RGB++ lock
-fn verify_outputs(config: &RGBPPConfig, btc_tx: &BTCTx) -> Result<(), SysError> {
+fn verify_outputs(config: &RGBPPConfig, btc_tx: &BTCTx) -> Result<(), Error> {
     let rgbpp_lock = load_script()?;
     for (index, type_hash) in QueryIter::new(load_cell_type_hash, Source::Output).enumerate() {
         // ignore non-type cells
@@ -73,7 +77,7 @@ fn verify_outputs(config: &RGBPPConfig, btc_tx: &BTCTx) -> Result<(), SysError> 
         if is_script_code_equal(&lock, &rgbpp_lock) {
             // check new seal txid + index is valid
             let lock_args =
-                RGBPPLock::from_slice(&lock.args().raw_data()).expect("Invalid RGBPP lock args");
+                RGBPPLock::from_slice(&lock.args().raw_data()).map_err(|_| Error::BadRGBPPLock)?;
             if check_utxo_seal(&lock_args, btc_tx) {
                 continue;
             }
@@ -83,13 +87,13 @@ fn verify_outputs(config: &RGBPPConfig, btc_tx: &BTCTx) -> Result<(), SysError> 
         if is_btc_time_lock(config, &lock) {
             // check new seal txid + index is valid
             let lock_args = BTCTimeLock::from_slice(lock.args().as_slice())
-                .expect("Invalid BTCTimeLock lock args");
+                .map_err(|_| Error::BadBTCTimeLock)?;
             if check_btc_time_lock(&lock_args, btc_tx, MIN_BTC_TIME_LOCK_AFTER) {
                 continue;
             }
         }
 
-        panic!("All outputs with type should be locked by RGBPP lock or Bitcoin time lock");
+        return Err(Error::OutputCellWithUnknownLock);
     }
     Ok(())
 }
@@ -112,27 +116,21 @@ fn verify_unlock(
     unlock_witness: &RGBPPUnlock,
     btc_tx: &BTCTx,
     ckb_tx: &Transaction,
-) -> Result<(), SysError> {
+) -> Result<(), Error> {
     // check bitcoin transaction inputs unlock RGB++ cell
     let expected_out_point: (Byte32, u32) = (lock_args.btc_txid(), lock_args.out_index().unpack());
     let is_found = btc_tx
         .inputs
         .iter()
         .any(|txin| txin.previous_output == expected_out_point);
-    if !is_found {
-        panic!("Bitcoin transaction doesn't unlock this cell");
-    }
+    ensure!(is_found, Error::UtxoSealMismatch);
 
     // check bitcoin transaction exists in light client
     let btc_tx_proof = unlock_witness.btc_tx_proof().raw_data();
-    let is_exists =
-        check_btc_tx_exists(&config.btc_lc_type_hash(), &btc_tx.txid, 0, &btc_tx_proof)?;
-    if !is_exists {
-        panic!("Bitcoin transaction doesn't exists in the light client");
-    }
+    check_btc_tx_exists(&config.btc_lc_type_hash(), &btc_tx.txid, 0, &btc_tx_proof)?;
 
     // verify commitment
-    check_btc_tx_commitment(config, btc_tx, ckb_tx, unlock_witness);
+    check_btc_tx_commitment(config, btc_tx, ckb_tx, unlock_witness)?;
     Ok(())
 }
 
@@ -141,41 +139,35 @@ fn check_btc_tx_commitment(
     btc_tx: &BTCTx,
     ckb_tx: &Transaction,
     unlock_witness: &RGBPPUnlock,
-) {
+) -> Result<(), Error> {
     let rgbpp_script = load_script().unwrap();
     // 1. find BTC commitment
-    let btc_commitment = bitcoin::extract_commitment(btc_tx).expect("extract btc commitment");
+    let btc_commitment = bitcoin::extract_commitment(btc_tx).ok_or(Error::BadBtcCommitment)?;
 
     // 2. verify commitment extra data
     let raw_ckb_tx = ckb_tx.raw();
-    let version = unlock_witness.version();
+    let version: u16 = unlock_witness.version().unpack();
     let input_len: u8 = unlock_witness.extra_data().input_len().into();
     let output_len: u8 = unlock_witness.extra_data().output_len().into();
-    assert_eq!(version.as_slice(), &[0u8, 0u8], "check version");
-    assert!(input_len > 0, "must commit at least one input");
-    assert!(output_len > 0, "must commit at least one output");
+    ensure_eq!(version, 0, Error::UnknownCommitmentVersion);
+    ensure!(input_len > 0, Error::BadBtcCommitment);
+    ensure!(output_len > 0, Error::BadBtcCommitment);
     let inputs_are_committed = QueryIter::new(load_cell_type_hash, Source::Input)
         .skip(input_len.into())
         .all(|type_hash| type_hash.is_none());
-    assert!(
-        inputs_are_committed,
-        "all input cell with type must be committed"
-    );
+    ensure!(inputs_are_committed, Error::CommitmentMismatch);
 
     let outputs_are_committed = raw_ckb_tx
         .outputs()
         .into_iter()
         .skip(output_len.into())
         .all(|output| output.type_().is_none());
-    assert!(
-        outputs_are_committed,
-        "all outputs cell with type must be committed"
-    );
+    ensure!(outputs_are_committed, Error::CommitmentMismatch);
 
     // 3. gen commitment from current CKB transaction
     let mut hasher = Sha256::new();
     hasher.update(b"RGB++");
-    hasher.update(version.as_slice());
+    hasher.update(version.to_le_bytes());
     hasher.update([input_len, output_len]);
     for input in raw_ckb_tx.inputs().into_iter().take(input_len.into()) {
         hasher.update(input.previous_output().as_slice());
@@ -214,5 +206,6 @@ fn check_btc_tx_commitment(
 
     // double sha256
     let commitment = bitcoin::sha2(&hasher.finalize()).pack();
-    assert_eq!(commitment, btc_commitment, "check commitment");
+    ensure_eq!(commitment, btc_commitment, Error::CommitmentMismatch);
+    Ok(())
 }
