@@ -1,3 +1,6 @@
+use crate::ensure;
+use crate::error::Error;
+
 use super::types::*;
 use super::utils::*;
 use alloc::vec::Vec;
@@ -97,7 +100,7 @@ impl<'r> Parser<'r> {
     }
 }
 
-pub fn parse_btc_tx(data: &Bytes) -> BTCTx {
+pub fn parse_btc_tx(data: &Bytes) -> Result<BTCTx, Error> {
     let txid = sha2(&sha2(data)).pack();
 
     let mut p = Parser::new(data);
@@ -117,13 +120,13 @@ pub fn parse_btc_tx(data: &Bytes) -> BTCTx {
     }
     let lock_time = p.read_u32();
 
-    assert!(p.is_exhausted(), "can't parse remain data");
+    ensure!(p.is_exhausted(), Error::BadBtcTx);
 
-    BTCTx {
+    Ok(BTCTx {
         txid,
         version,
         inputs,
         outputs,
         lock_time,
-    }
+    })
 }

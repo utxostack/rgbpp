@@ -16,6 +16,8 @@ use ckb_std::{
     },
 };
 use rgbpp_core::{
+    ensure_eq,
+    error::Error,
     on_chain::{bitcoin_light_client::check_btc_tx_exists, utils::load_config},
     schemas::rgbpp::*,
 };
@@ -28,12 +30,14 @@ pub fn program_entry() -> i8 {
     match main() {
         Ok(_) => 0,
         Err(err) => {
-            panic!("failed because {:?}", err);
+            let err_code = err as i8;
+            ckb_std::debug!("failed because {}", err_code);
+            err_code
         }
     }
 }
 
-fn main() -> Result<(), SysError> {
+fn main() -> Result<(), Error> {
     let lock_args = load_lock_args()?;
     let ckb_tx = load_transaction()?;
     check_output_cells(&lock_args)?;
@@ -66,7 +70,7 @@ fn fetch_unlock_from_witness() -> Result<BTCTimeUnlock, SysError> {
     }
 }
 
-fn check_output_cells(lock_args: &BTCTimeLock) -> Result<(), SysError> {
+fn check_output_cells(lock_args: &BTCTimeLock) -> Result<(), Error> {
     let script_hash = load_script_hash()?;
     // iter btc time lock inputs
     let time_lock_iter = QueryIter::new(load_cell_lock_hash, Source::Input)
@@ -83,23 +87,27 @@ fn check_output_cells(lock_args: &BTCTimeLock) -> Result<(), SysError> {
     for index in time_lock_iter {
         let input_cell = load_cell(index, Source::Input)?;
         let output_cell = load_cell(index, Source::Output)?;
-        assert_eq!(
+        ensure_eq!(
             expected_output_lock,
             output_cell.lock(),
-            "check output lock"
+            Error::OutputCellMismatch
         );
 
-        assert_eq!(
+        ensure_eq!(
             input_cell.capacity(),
             output_cell.capacity(),
-            "check output capacity"
+            Error::OutputCellMismatch
         );
 
-        assert_eq!(input_cell.type_(), output_cell.type_(), "check output type");
+        ensure_eq!(
+            input_cell.type_(),
+            output_cell.type_(),
+            Error::OutputCellMismatch
+        );
 
         let input_cell_data = load_cell_data_hash(index, Source::Input)?;
         let output_cell_data = load_cell_data_hash(index, Source::Output)?;
-        assert_eq!(input_cell_data, output_cell_data, "check output data");
+        ensure_eq!(input_cell_data, output_cell_data, Error::OutputCellMismatch);
     }
     Ok(())
 }

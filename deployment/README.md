@@ -53,7 +53,7 @@ cd rgbpp
 # use deploy-tool to gen config binary
 
 # RGBPP config
-cargo run --bin deploy-tool -- -o deploy/config-bins/rgbpp-config gen-rgbpp-config --btc-lc-type-hash <32 bytes type hash> --btc-time-lock-type-hash <32 bytes type hash>
+cargo run --bin deploy-tool -- -o deploy/config-bins/rgbpp-config gen-rgbpp-config --version <2 bytes version> --btc-lc-type-hash <32 bytes type hash> --btc-time-lock-type-hash <32 bytes type hash>
 ```
 
 Step 5, edit `deploy/deployment-configs/rgbpp-lock.toml`. Set lock of output cells.
