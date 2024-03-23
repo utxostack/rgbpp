@@ -348,3 +348,42 @@ fn test_rgbpp_unlock() {
 
     verify_and_dump_failed_tx(&context, &tx, MAX_CYCLES).expect("pass");
 }
+
+#[test]
+fn test_btc_time_lock_args() {
+    let code_hash = [1u8; 32].pack();
+    let args = Bytes::from(vec![2u8; 20]).pack();
+    let btc_txid = [3u8; 32].pack();
+    let after = 42u32.pack();
+
+    let script = Script::new_builder()
+        .code_hash(code_hash)
+        .hash_type(ScriptHashType::Type.into())
+        .args(args)
+        .build();
+    let lock = BTCTimeLock::new_builder()
+        .btc_txid(btc_txid)
+        .lock_script(script)
+        .after(after)
+        .build();
+    println!("{}", lock);
+    let lock_bytes = lock.as_bytes().pack();
+    println!("{}", lock_bytes);
+}
+
+#[test]
+fn test_btc_time_unlock_witness() {
+    let btc_tx_proof = [1, 2, 3, 4, 5, 6, 7, 8];
+    let proof_bytes = btc_tx_proof.to_vec().pack();
+    let unlock = BTCTimeUnlock::new_builder()
+        .btc_tx_proof(proof_bytes)
+        .build();
+    println!("Unlock: {}", unlock);
+    let unlock_bytes = unlock.as_bytes();
+    println!("Unlock bytes: {}", unlock_bytes.pack());
+    let witness_args = WitnessArgs::new_builder()
+        .lock(Some(unlock_bytes).pack())
+        .build();
+    let witness_bytes = witness_args.as_bytes().pack();
+    println!("Witness bytes: {}", witness_bytes);
+}
