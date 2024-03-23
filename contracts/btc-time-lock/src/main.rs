@@ -59,14 +59,15 @@ fn load_lock_args() -> Result<BTCTimeLock, SysError> {
     Ok(lock)
 }
 
-fn fetch_unlock_from_witness() -> Result<BTCTimeUnlock, SysError> {
+fn fetch_unlock_from_witness() -> Result<BTCTimeUnlock, Error> {
     let witness_args = load_witness_args(0, Source::GroupInput)?;
     match witness_args.lock().to_opt() {
         Some(args) => {
-            let unlock = BTCTimeUnlock::from_slice(args.as_slice()).unwrap();
+            let unlock =
+                BTCTimeUnlock::from_slice(args.as_slice()).map_err(|_| Error::BadBTCTimeLock)?;
             Ok(unlock)
         }
-        None => Err(SysError::ItemMissing),
+        None => Err(Error::ItemMissing),
     }
 }
 
