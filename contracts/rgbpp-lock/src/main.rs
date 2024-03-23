@@ -85,7 +85,7 @@ fn verify_outputs(config: &RGBPPConfig, btc_tx: &BTCTx) -> Result<(), Error> {
         // check bitcoin time lock
         if is_btc_time_lock(config, &lock) {
             // check new seal txid + index is valid
-            let lock_args = BTCTimeLock::from_slice(lock.args().as_slice())
+            let lock_args = BTCTimeLock::from_slice(&lock.args().raw_data())
                 .map_err(|_| Error::BadBTCTimeLock)?;
             if check_btc_time_lock(&lock_args, btc_tx, MIN_BTC_TIME_LOCK_AFTER) {
                 continue;
