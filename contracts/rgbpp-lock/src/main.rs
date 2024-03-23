@@ -102,7 +102,7 @@ fn fetch_unlock_from_witness() -> Result<RGBPPUnlock, Error> {
     match witness_args.lock().to_opt() {
         Some(args) => {
             let unlock =
-                RGBPPUnlock::from_slice(&args.raw_data()).map_err(|_| Error::BadRGBPPLock)?;
+                RGBPPUnlock::from_slice(&args.raw_data()).map_err(|_| Error::BadRGBPPUnlock)?;
             Ok(unlock)
         }
         None => Err(Error::ItemMissing),

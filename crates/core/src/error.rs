@@ -25,6 +25,8 @@ pub enum Error {
     BadRGBPPLock,
     BadBTCTimeLock,
     BadBtcCommitment,
+    BadRGBPPUnlock,
+    BadBTCTimeUnlock,
 
     // 0x40 ~ 0x44: verification error
     OutputCellMismatch = 0x40,
