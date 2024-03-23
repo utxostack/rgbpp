@@ -13,7 +13,6 @@ use ckb_std::{
         packed::{Byte32, Transaction},
         prelude::{Builder, Entity, Pack, Unpack},
     },
-    error::SysError,
     high_level::{
         load_cell_lock, load_cell_type_hash, load_script, load_transaction, load_witness_args,
         QueryIter,
@@ -98,14 +97,15 @@ fn verify_outputs(config: &RGBPPConfig, btc_tx: &BTCTx) -> Result<(), Error> {
     Ok(())
 }
 
-fn fetch_unlock_from_witness() -> Result<RGBPPUnlock, SysError> {
+fn fetch_unlock_from_witness() -> Result<RGBPPUnlock, Error> {
     let witness_args = load_witness_args(0, Source::GroupInput)?;
     match witness_args.lock().to_opt() {
         Some(args) => {
-            let unlock = RGBPPUnlock::from_slice(&args.raw_data()).unwrap();
+            let unlock =
+                RGBPPUnlock::from_slice(&args.raw_data()).map_err(|_| Error::BadRGBPPLock)?;
             Ok(unlock)
         }
-        None => Err(SysError::ItemMissing),
+        None => Err(Error::ItemMissing),
     }
 }
 
@@ -140,7 +140,7 @@ fn check_btc_tx_commitment(
     ckb_tx: &Transaction,
     unlock_witness: &RGBPPUnlock,
 ) -> Result<(), Error> {
-    let rgbpp_script = load_script().unwrap();
+    let rgbpp_script = load_script().map_err(|_| Error::BadRGBPPLock)?;
     // 1. find BTC commitment
     let btc_commitment = bitcoin::extract_commitment(btc_tx).ok_or(Error::BadBtcCommitment)?;
 
@@ -181,7 +181,7 @@ fn check_btc_tx_commitment(
         let lock = output.lock();
         if is_btc_time_lock(config, &lock) {
             let lock_args = BTCTimeLock::from_slice(&lock.args().raw_data())
-                .unwrap()
+                .map_err(|_| Error::BadBTCTimeLock)?
                 .as_builder()
                 .btc_txid(Byte32::default())
                 .build();
@@ -190,7 +190,7 @@ fn check_btc_tx_commitment(
             hasher.update(output.as_slice());
         } else if is_script_code_equal(&rgbpp_script, &lock) {
             let lock_args = RGBPPLock::from_slice(&lock.args().raw_data())
-                .unwrap()
+                .map_err(|_| Error::BadRGBPPLock)?
                 .as_builder()
                 .btc_txid(Byte32::default())
                 .build();
