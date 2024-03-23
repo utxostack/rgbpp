@@ -64,7 +64,7 @@ fn fetch_unlock_from_witness() -> Result<BTCTimeUnlock, Error> {
     match witness_args.lock().to_opt() {
         Some(args) => {
             let unlock =
-                BTCTimeUnlock::from_slice(args.as_slice()).map_err(|_| Error::BadBTCTimeLock)?;
+                BTCTimeUnlock::from_slice(&args.raw_data()).map_err(|_| Error::BadBTCTimeLock)?;
             Ok(unlock)
         }
         None => Err(Error::ItemMissing),
