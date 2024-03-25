@@ -11,7 +11,8 @@ pub fn check_btc_tx_exists(
     confirmations: u32,
     tx_proof: &[u8],
 ) -> Result<(), Error> {
-    let tx_proof = TransactionProofReader::from_slice(tx_proof).unwrap();
+    let tx_proof =
+        TransactionProofReader::from_slice(tx_proof).map_err(|_| Error::SpvProofMalformed)?;
     let index = QueryIter::new(load_cell_type_hash, Source::CellDep)
         .enumerate()
         .find_map(|(index, type_hash)| {
