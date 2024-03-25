@@ -19,6 +19,7 @@ pub enum Error {
     SpvClientNotFound = 0x20,
     SpvClientMalformed,
     SpvProofIncorrect,
+    SpvProofMalformed,
 
     // 0x30 ~ 0x33: Data error
     BadBtcTx = 0x30,
