@@ -201,6 +201,8 @@ fn check_btc_tx_commitment(
             hasher.update(output.as_slice());
         }
         let data: Vec<u8> = data.raw_data().into();
+        let data_len: u32 = data.len() as u32;
+        hasher.update(data_len.to_le_bytes());
         hasher.update(&data);
     }
 

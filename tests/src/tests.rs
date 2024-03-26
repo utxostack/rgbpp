@@ -221,6 +221,7 @@ fn gen_commitment(rgbpp_tx: &TransactionView, extra_data: &ExtraCommitmentData) 
 
     for (output, data) in rgbpp_tx.outputs_with_data_iter().take(output_len as usize) {
         hasher.update(output.as_slice());
+        hasher.update((data.len() as u32).to_le_bytes());
         hasher.update(&data);
     }
     sha2(&hasher.finalize())
