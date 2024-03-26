@@ -13,6 +13,6 @@ molecule = { version = "0.7.5", default-features = false }
 ckb-gen-types = { version = "0.112.0", default-features = false }
 sha2 = { version = "0.11.0-pre.3", default-features = false }
 ckb-std = "0.15.1"
-ckb-bitcoin-spv-verifier = { git = "https://github.com/ckb-cell/ckb-bitcoin-spv.git", rev = "837a307f5b1b9193621f032c2370bb9e91506b81", default-features = false, features = [
+ckb-bitcoin-spv-verifier = { git = "https://github.com/ckb-cell/ckb-bitcoin-spv.git", rev = "a6fce4b5333967905a6d3859c56babc985ef89e9", default-features = false, features = [
   "no-std",
 ] }
