@@ -1,0 +1,2 @@
+875670adc22ee74985f6b37980795c177fb2e2a765e919c542f80138858f6f5a  build/release/btc-time-lock
+ecd325087d56f2880b3b006e1a9583ddcaa3fe4e09c14fe7f3ed39eb0cabba50  build/release/rgbpp-lock
