@@ -28,7 +28,7 @@ impl BtcTimeLockDesc {
 
 #[derive(Debug, Clone, Default)]
 pub struct UserLockDesc {
-    lock_opt: Option<Script>,
+    pub lock_opt: Option<Script>,
 }
 
 #[derive(Debug, Clone)]
@@ -264,7 +264,12 @@ pub fn build_rgbpp_tx(
         .build()
 }
 
-pub fn build_btc_time_lock_tx(context: &mut Context, scripts: &TestScripts) -> TransactionView {
+pub fn build_btc_time_lock_tx(
+    context: &mut Context,
+    scripts: &TestScripts,
+    input_amount: u128,
+    outputs_desc: Vec<OutputDesc>,
+) -> TransactionView {
     // mock prev btc utxo seal
     let mocked_btc_txid: [u8; 32] = random();
     // new seal out index, index 0 is commitment utxo
@@ -287,7 +292,7 @@ pub fn build_btc_time_lock_tx(context: &mut Context, scripts: &TestScripts) -> T
             .app
             .btc_time_lock
             .build_lock(user_lock.clone(), after, mocked_btc_txid.pack());
-    let data = 1000u128.to_le_bytes().to_vec().into();
+    let data = input_amount.to_le_bytes().to_vec().into();
     let cell = CellOutput::new_builder()
         .lock(lock)
         .type_(Some(type_.clone()).pack())
@@ -295,11 +300,28 @@ pub fn build_btc_time_lock_tx(context: &mut Context, scripts: &TestScripts) -> T
     let out_point = context.create_cell(cell, data);
 
     // outputs
-    let data1 = 1000u128.to_le_bytes().to_vec().pack();
-    let cell1 = CellOutput::new_builder()
-        .lock(user_lock.clone())
-        .type_(Some(type_.clone()).pack())
-        .build();
+
+    let mut outputs = Vec::with_capacity(outputs_desc.len());
+    let mut outputs_data = Vec::with_capacity(outputs_desc.len());
+
+    for OutputDesc { lock, amount } in outputs_desc.clone() {
+        let data = amount.to_le_bytes().to_vec().pack();
+
+        let cell_lock = match lock {
+            LockDesc::Rgbpp | LockDesc::BtcTimeLock(..) => {
+                panic!("Can't build RGBPP or BtcTimeLock");
+            }
+            LockDesc::UserLock(UserLockDesc { lock_opt }) => {
+                lock_opt.unwrap_or_else(|| user_lock.clone())
+            }
+        };
+        let cell = CellOutput::new_builder()
+            .lock(cell_lock)
+            .type_(Some(type_.clone()).pack())
+            .build();
+        outputs.push(cell);
+        outputs_data.push(data);
+    }
 
     // unlock cell with btc tx
     let unlock = BTCTimeUnlock::new_builder()
@@ -312,8 +334,8 @@ pub fn build_btc_time_lock_tx(context: &mut Context, scripts: &TestScripts) -> T
 
     tx_builder
         .input(CellInput::new_builder().previous_output(out_point).build())
-        .outputs(vec![cell1])
-        .outputs_data(vec![data1])
+        .outputs(outputs)
+        .outputs_data(outputs_data)
         .witness(unlock_witness.as_bytes().pack())
         .cell_dep(
             CellDep::new_builder()

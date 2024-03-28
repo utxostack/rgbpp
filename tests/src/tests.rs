@@ -1,6 +1,6 @@
 use crate::rgbpp::{
     assert_script_error, build_btc_time_lock_tx, build_rgbpp_tx, BtcTimeLockDesc, LockDesc,
-    OutputDesc,
+    OutputDesc, UserLockDesc,
 };
 use crate::utils::TestScripts;
 use crate::{verify_and_dump_failed_tx, Loader};
@@ -9,6 +9,7 @@ use ckb_testtool::context::Context;
 use rand::random;
 use rgbpp_core::bitcoin::MIN_BTC_TIME_LOCK_AFTER;
 use rgbpp_core::error::Error as RgbppError;
+use rgbpp_core::schemas::blockchain::Script;
 use rgbpp_core::schemas::{blockchain::CellOutput, ckb_gen_types::prelude::*};
 
 const MAX_CYCLES: u64 = 10_000_000;
@@ -232,7 +233,69 @@ fn test_btc_time_lock() {
     let loader = Loader::default();
     let mut context = Context::default();
     let scripts = TestScripts::setup(&loader, &mut context);
-    let tx = build_btc_time_lock_tx(&mut context, &scripts);
+    let tx = build_btc_time_lock_tx(
+        &mut context,
+        &scripts,
+        1000,
+        vec![OutputDesc {
+            lock: LockDesc::UserLock(Default::default()),
+            amount: 1000,
+        }],
+    );
     let tx = context.complete_tx(tx);
     verify_and_dump_failed_tx(&context, &tx, MAX_CYCLES).expect("pass");
+}
+
+#[test]
+fn test_btc_time_lock_with_wrong_user_lock() {
+    let loader = Loader::default();
+    let mut context = Context::default();
+    let scripts = TestScripts::setup(&loader, &mut context);
+    let wrong_user_lock = {
+        let code_hash: [u8; 32] = random();
+        let args: [u8; 32] = random();
+        Script::new_builder()
+            .code_hash(code_hash.pack())
+            .args(args.to_vec().pack())
+            .build()
+    };
+    let tx = build_btc_time_lock_tx(
+        &mut context,
+        &scripts,
+        1000,
+        vec![OutputDesc {
+            lock: LockDesc::UserLock(UserLockDesc {
+                lock_opt: Some(wrong_user_lock),
+            }),
+            amount: 1000,
+        }],
+    );
+    let tx = context.complete_tx(tx);
+    let err = verify_and_dump_failed_tx(&context, &tx, MAX_CYCLES).expect_err("fail");
+    assert_script_error(err, RgbppError::OutputCellMismatch);
+}
+
+#[test]
+fn test_btc_time_lock_with_incorrect_output() {
+    let loader = Loader::default();
+    let mut context = Context::default();
+    let scripts = TestScripts::setup(&loader, &mut context);
+    let tx = build_btc_time_lock_tx(
+        &mut context,
+        &scripts,
+        1000,
+        vec![
+            OutputDesc {
+                lock: LockDesc::UserLock(Default::default()),
+                amount: 900,
+            },
+            OutputDesc {
+                lock: LockDesc::UserLock(Default::default()),
+                amount: 100,
+            },
+        ],
+    );
+    let tx = context.complete_tx(tx);
+    let err = verify_and_dump_failed_tx(&context, &tx, MAX_CYCLES).expect_err("fail");
+    assert_script_error(err, RgbppError::OutputCellMismatch);
 }
