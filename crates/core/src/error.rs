@@ -53,6 +53,8 @@ impl From<SysError> for Error {
 macro_rules! ensure {
     ($cond: expr, $err: expr) => {
         if !$cond {
+            #[cfg(debug_assertions)]
+            ckb_std::debug!("{}:{} {:?}", file!(), line!(), $err as i8);
             return Err($err);
         }
     };
@@ -62,6 +64,8 @@ macro_rules! ensure {
 macro_rules! ensure_eq {
     ($a: expr,$b: expr, $err: expr) => {
         if $a != $b {
+            #[cfg(debug_assertions)]
+            ckb_std::debug!("{}:{} {:?}", file!(), line!(), $err as i8);
             return Err($err);
         }
     };
