@@ -14,7 +14,11 @@ use std::str::FromStr;
 #[cfg(test)]
 mod btc_mock;
 #[cfg(test)]
+mod rgbpp;
+#[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod utils;
 
 // The exact same Loader code from capsule's template, except that
 // now we use MODE as the environment variable
