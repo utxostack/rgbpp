@@ -1,12 +1,12 @@
 # BTCTimeLock Lock Script
 
-BTCTimeLock is a time lock used when an owner migrates RGB++ assets from Bitcoin to CKB. The assets must remain locked for at least five Bitcoin blocks to safeguard them against potential chain reorgs.
+BTCTimeLock is a time lock used when an owner migrates RGB++ assets from Bitcoin to CKB. The assets must remain locked for at least six Bitcoin blocks to safeguard them against potential chain reorgs.
 
 ## Operations
 
 ### Unlock
 
-The BTC timelock can be unlocked once `btc_txid`'s confirmations surpass `after` (at least five), the `outputs` must contain correspondent cells where each cell's type, data, and capacity are equal to the corresponding input BitcoinTimeLock cell. The lock field must equal `lock_script`.
+The BTC timelock can be unlocked once `btc_txid`'s confirmations surpass `after` (at least six), the `outputs` must contain correspondent cells where each cell's type, data, and capacity are equal to the corresponding input BitcoinTimeLock cell. The lock field must equal `lock_script`.
 
 ```yaml
 inputs:
