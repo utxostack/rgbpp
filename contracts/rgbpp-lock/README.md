@@ -42,7 +42,7 @@ outputs:
   - lock:
       code_hash: (RGB++ type_id)
       hash_type: type
-      args: btc_txid | out_index
+      args: out_index | btc_txid
     type: XUDT or other asset types
     data: ...
     capacity: ...
@@ -55,12 +55,12 @@ Transfer an RGB++ cell. The `btc_tx` opens the `btc_txid | out_index` seal and g
 
 ``` yaml
 inputs:
-  - previous_out_point: (RGB++ cell args=btc_txid | out_index)
+  - previous_out_point: (RGB++ cell args=out_index | btc_txid)
 outputs:
   - lock:
       code_hash: (RGB++ type_id)
       hash_type: type
-      args: btc_txid' | out_index'
+      args: out_index' | btc_txid'
     type: XUDT or other asset types
     data: ...
     capacity: ...
