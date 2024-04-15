@@ -31,7 +31,10 @@ fn byte_to_script_hash_type(v: u8) -> Option<ScriptHashType> {
 }
 
 // get current script cell dep
-fn get_script_cell_dep(raw_tx: &RawTransaction, script: &Script) -> Result<CellDep, Error> {
+fn get_script_cell_dep<'r>(
+    raw_tx: &RawTransactionReader<'r>,
+    script: &Script,
+) -> Result<CellDepReader<'r>, Error> {
     let script_hash_type: ScriptHashType =
         byte_to_script_hash_type(script.hash_type().into()).expect("parse script hash type");
     // look up script dep cell
@@ -40,7 +43,7 @@ fn get_script_cell_dep(raw_tx: &RawTransaction, script: &Script) -> Result<CellD
     // script dep cell and config cell must located in front of all dep groups
     let all_dep_is_code = raw_tx
         .cell_deps()
-        .into_iter()
+        .iter()
         .take(dep_index + 1)
         .all(|cell_dep| {
             byte_to_dep_type(cell_dep.dep_type().into())
@@ -58,10 +61,10 @@ fn get_script_cell_dep(raw_tx: &RawTransaction, script: &Script) -> Result<CellD
 }
 
 fn get_config_cell_dep_index(
-    raw_tx: &RawTransaction,
-    script_cell_dep: &CellDep,
+    raw_tx: &RawTransactionReader,
+    script_cell_dep: &CellDepReader,
 ) -> Result<usize, Error> {
-    for (index, cell_dep) in raw_tx.cell_deps().into_iter().enumerate() {
+    for (index, cell_dep) in raw_tx.cell_deps().iter().enumerate() {
         // script dep cell and config cell must located in front of all dep groups
         if !byte_to_dep_type(cell_dep.dep_type().into())
             .is_some_and(|dep_type| dep_type == DepType::Code)
@@ -70,7 +73,8 @@ fn get_config_cell_dep_index(
         }
         let cell_index: u32 = cell_dep.out_point().index().unpack();
         if cell_index == 1
-            && cell_dep.out_point().tx_hash() == script_cell_dep.out_point().tx_hash()
+            && cell_dep.out_point().tx_hash().as_slice()
+                == script_cell_dep.out_point().tx_hash().as_slice()
         {
             return Ok(index);
         }
@@ -85,7 +89,7 @@ fn get_config_cell_dep_index(
 ///   - output(index=0, data=rgbpp_code)
 ///   - output(index=1, data=rgbpp_config)
 /// ```
-pub fn load_config<Config: Entity>(tx: &Transaction) -> Result<Config, Error> {
+pub fn load_config<Config: Entity>(tx: &TransactionReader) -> Result<Config, Error> {
     // get current script
     let script = load_script().map_err(|_| Error::ConfigNotFound)?;
     let raw_tx = tx.raw();

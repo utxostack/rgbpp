@@ -41,7 +41,7 @@ fn main() -> Result<(), Error> {
     let lock_args = load_lock_args()?;
     let ckb_tx = load_transaction()?;
     check_output_cells(&lock_args)?;
-    let config = load_config::<BTCTimeLockConfig>(&ckb_tx)?;
+    let config = load_config::<BTCTimeLockConfig>(&ckb_tx.as_reader())?;
     let unlock_witness = fetch_unlock_from_witness()?;
     let btc_tx_proof = unlock_witness.btc_tx_proof().raw_data();
     check_btc_tx_exists(

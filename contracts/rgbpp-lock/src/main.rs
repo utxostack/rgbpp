@@ -10,8 +10,8 @@ use ckb_std::default_alloc;
 use ckb_std::{
     ckb_constants::Source,
     ckb_types::{
-        packed::{Byte32, Transaction},
-        prelude::{Builder, Entity, Pack, Unpack},
+        packed::{Byte32, TransactionReader},
+        prelude::*,
     },
     high_level::{
         load_cell_lock, load_cell_type_hash, load_script, load_transaction, load_witness_args,
@@ -50,14 +50,21 @@ fn main() -> Result<(), Error> {
         RGBPPLock::from_slice(&rgbpp_lock.args().raw_data()).map_err(|_| Error::BadRGBPPLock)?
     };
     let ckb_tx = load_transaction()?;
-    let config = load_config::<RGBPPConfig>(&ckb_tx)?;
+    let ckb_tx_reader = ckb_tx.as_reader();
+    let config = load_config::<RGBPPConfig>(&ckb_tx_reader)?;
     let unlock_witness = fetch_unlock_from_witness()?;
 
     // parse bitcoin transaction
     let raw_btc_tx = unlock_witness.btc_tx().raw_data();
     let btc_tx: BTCTx = parse_btc_tx(&raw_btc_tx)?;
 
-    verify_unlock(&config, &lock_args, &unlock_witness, &btc_tx, &ckb_tx)?;
+    verify_unlock(
+        &config,
+        &lock_args,
+        &unlock_witness,
+        &btc_tx,
+        &ckb_tx_reader,
+    )?;
     verify_outputs(&config, &btc_tx)?;
     Ok(())
 }
@@ -145,7 +152,7 @@ fn verify_unlock(
     lock_args: &RGBPPLock,
     unlock_witness: &RGBPPUnlock,
     btc_tx: &BTCTx,
-    ckb_tx: &Transaction,
+    ckb_tx: &TransactionReader,
 ) -> Result<(), Error> {
     // check bitcoin transaction inputs unlock RGB++ cell
     let expected_out_point: (Byte32, u32) = (lock_args.btc_txid(), lock_args.out_index().unpack());
@@ -167,7 +174,7 @@ fn verify_unlock(
 fn check_btc_tx_commitment(
     config: &RGBPPConfig,
     btc_tx: &BTCTx,
-    ckb_tx: &Transaction,
+    ckb_tx: &TransactionReader,
     unlock_witness: &RGBPPUnlock,
 ) -> Result<(), Error> {
     let rgbpp_script = load_script().map_err(|_| Error::BadRGBPPLock)?;
@@ -189,7 +196,7 @@ fn check_btc_tx_commitment(
 
     let outputs_are_committed = raw_ckb_tx
         .outputs()
-        .into_iter()
+        .iter()
         .skip(output_len.into())
         .all(|output| output.type_().is_none());
     ensure!(outputs_are_committed, Error::CommitmentMismatch);
@@ -199,16 +206,16 @@ fn check_btc_tx_commitment(
     hasher.update(b"RGB++");
     hasher.update(version.to_le_bytes());
     hasher.update([input_len, output_len]);
-    for input in raw_ckb_tx.inputs().into_iter().take(input_len.into()) {
+    for input in raw_ckb_tx.inputs().iter().take(input_len.into()) {
         hasher.update(input.previous_output().as_slice());
     }
     for (output, data) in raw_ckb_tx
         .outputs()
-        .into_iter()
-        .zip(raw_ckb_tx.outputs_data())
+        .iter()
+        .zip(raw_ckb_tx.outputs_data().iter())
         .take(output_len.into())
     {
-        let lock = output.lock();
+        let lock = output.lock().to_entity();
         if is_btc_time_lock(config, &lock) {
             let lock_args = BTCTimeLock::from_slice(&lock.args().raw_data())
                 .map_err(|_| Error::BadBTCTimeLock)?
@@ -216,7 +223,7 @@ fn check_btc_tx_commitment(
                 .btc_txid(Byte32::default())
                 .build();
             let lock = lock.as_builder().args(lock_args.as_bytes().pack()).build();
-            let output = output.as_builder().lock(lock).build();
+            let output = output.to_entity().as_builder().lock(lock).build();
             hasher.update(output.as_slice());
         } else if is_script_code_equal(&rgbpp_script, &lock) {
             let lock_args = RGBPPLock::from_slice(&lock.args().raw_data())
@@ -225,7 +232,7 @@ fn check_btc_tx_commitment(
                 .btc_txid(Byte32::default())
                 .build();
             let lock = lock.as_builder().args(lock_args.as_bytes().pack()).build();
-            let output = output.as_builder().lock(lock).build();
+            let output = output.to_entity().as_builder().lock(lock).build();
             hasher.update(output.as_slice());
         } else {
             hasher.update(output.as_slice());
