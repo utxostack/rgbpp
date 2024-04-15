@@ -1,3 +1,8 @@
+//! RGBPP lock
+//!
+//! Heap config (fixed size 4KB, dynamic size 1M, min block 64B)
+//! https://github.com/nervosnetwork/ckb-std/blob/676455542258235a22f6f443b18e4b4d887a661a/src/global_alloc_macro/default_alloc.rs#L18
+
 #![no_std]
 #![cfg_attr(not(test), no_main)]
 
@@ -30,7 +35,7 @@ use rgbpp_core::{
 #[cfg(not(test))]
 ckb_std::entry!(program_entry);
 #[cfg(not(test))]
-default_alloc!();
+default_alloc!(4 * 1024, 1024 * 1024, 64);
 
 pub fn program_entry() -> i8 {
     match main() {
