@@ -97,10 +97,40 @@ fn verify_outputs(config: &RGBPPConfig, btc_tx: &BTCTx) -> Result<(), Error> {
     Ok(())
 }
 
+fn load_unlock(index: usize, source: Source) -> Result<RGBPPUnlock, Error> {
+    let witness_args = load_witness_args(index, source)?;
+    match witness_args.lock().to_opt() {
+        Some(args) => {
+            let unlock =
+                RGBPPUnlock::from_slice(&args.raw_data()).map_err(|_| Error::BadRGBPPUnlock)?;
+            Ok(unlock)
+        }
+        None => Err(Error::ItemMissing),
+    }
+}
+
+/// Fetch unlock
+///
+/// In most cases, the RGBPPUnlock is located at group_input[0].lock.
+///
+/// For RGB++ cells which seal UTXOs in the same BTC transaction, the RGBPPUnlock is also the same.
+/// Therefore, to reduce duplicated witness, we can pass an index to group_input[0].lock.
+/// In such a situation, we load RGBPPUnlock from the index position.
 fn fetch_unlock_from_witness() -> Result<RGBPPUnlock, Error> {
     let witness_args = load_witness_args(0, Source::GroupInput)?;
     match witness_args.lock().to_opt() {
+        Some(args) if args.len() == 4 => {
+            // we assume args represents index of witness if len is 4
+            let index = u32::from_le_bytes(
+                args.raw_data()[..]
+                    .try_into()
+                    .map_err(|_| Error::BadRGBPPUnlock)?,
+            );
+            // load unlock from index
+            load_unlock(index as usize, Source::Input)
+        }
         Some(args) => {
+            // parse unlock
             let unlock =
                 RGBPPUnlock::from_slice(&args.raw_data()).map_err(|_| Error::BadRGBPPUnlock)?;
             Ok(unlock)

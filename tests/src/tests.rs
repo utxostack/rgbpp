@@ -4,13 +4,15 @@ use crate::rgbpp::{
 };
 use crate::utils::TestScripts;
 use crate::{verify_and_dump_failed_tx, Loader};
-use ckb_testtool::ckb_types::prelude::Unpack;
 use ckb_testtool::context::Context;
 use rand::random;
 use rgbpp_core::bitcoin::MIN_BTC_TIME_LOCK_AFTER;
 use rgbpp_core::error::Error as RgbppError;
-use rgbpp_core::schemas::blockchain::Script;
-use rgbpp_core::schemas::{blockchain::CellOutput, ckb_gen_types::prelude::*};
+use rgbpp_core::schemas::blockchain::{BytesOpt, Script, WitnessArgs};
+use rgbpp_core::schemas::{
+    blockchain::CellOutput,
+    ckb_gen_types::{bytes::Bytes, prelude::*},
+};
 
 const MAX_CYCLES: u64 = 10_000_000;
 
@@ -298,4 +300,50 @@ fn test_btc_time_lock_with_incorrect_output() {
     let tx = context.complete_tx(tx);
     let err = verify_and_dump_failed_tx(&context, &tx, MAX_CYCLES).expect_err("fail");
     assert_script_error(err, RgbppError::OutputCellMismatch);
+}
+
+#[test]
+fn test_rgbpp_unlock_with_index_witness() {
+    let loader = Loader::default();
+    let mut context = Context::default();
+
+    let scripts = TestScripts::setup(&loader, &mut context);
+
+    let tx = build_rgbpp_tx(
+        &mut context,
+        &scripts,
+        1000,
+        vec![
+            OutputDesc {
+                lock: LockDesc::Rgbpp,
+                amount: 300,
+            },
+            OutputDesc {
+                lock: LockDesc::Rgbpp,
+                amount: 700,
+            },
+        ],
+    );
+    let tx = context.complete_tx(tx);
+    let mut witnesses: Vec<_> = tx.witnesses().unpack();
+    assert!(!witnesses[0].is_empty(), "unlock witness must isn't empty");
+
+    // append unlock witness to the last
+    let index: u32 = witnesses.len() as u32;
+    witnesses.push(witnesses[0].clone());
+
+    witnesses[0] = {
+        let index = Bytes::copy_from_slice(&index.to_le_bytes());
+        WitnessArgs::new_builder()
+            .lock(BytesOpt::new_builder().set(Some(index.pack())).build())
+            .build()
+            .as_bytes()
+    };
+
+    let tx = tx
+        .as_advanced_builder()
+        .set_witnesses(witnesses.into_iter().map(|b| b.pack()).collect())
+        .build();
+
+    verify_and_dump_failed_tx(&context, &tx, MAX_CYCLES).expect("pass");
 }
