@@ -18,4 +18,7 @@ make build CARGO_ARGS="--features=rgbpp-core/mock-bitcoin-light-client"
 make test
 ```
 
+## Audits
+
+[audits](./audits/)
 
